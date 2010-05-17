@@ -29,6 +29,7 @@
 >         mkOpts (TraceOn:xs) = Trace:(mkOpts xs)
 >         mkOpts (Header f:xs) = MakeHeader f:(mkOpts xs)
 >         mkOpts (DbgInfo:xs) = Debug:(mkOpts xs)
+>         mkOpts (CheckLvl i:xs) = Checking i:(mkOpts xs)
 >         mkOpts (_:xs) = mkOpts xs
 >         mkOpts [] = []
 
@@ -92,6 +93,7 @@
 >             | CFlags -- output include flags
 >             | LibFlags -- output linker flags
 >             | DbgInfo -- generate debug info
+>             | CheckLvl Int -- Checking level, 0 for none, default none
 >   deriving Eq
 
 > parseArgs :: [String] -> [Option]
@@ -106,6 +108,7 @@
 > parseArgs ("-includedirs":args) = CFlags:(parseArgs args)
 > parseArgs ("-libdirs":args) = LibFlags:(parseArgs args)
 > parseArgs ("-g":args) = DbgInfo:(parseArgs args)
+> parseArgs ("-checking":lvl:args) = CheckLvl (read lvl):(parseArgs args)
 > parseArgs (('$':x):args) = (COpt (x ++ concat (map (" "++) args))):[]
 > parseArgs (('-':x):args) = (COpt x):(parseArgs args)
 > parseArgs (x:args) = (File x):(parseArgs args)

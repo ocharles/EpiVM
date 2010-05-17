@@ -2,6 +2,17 @@
 
 > import Control.Monad
 
+> -- | (Debugging) options to give to compiler
+> data CompileOptions = KeepC -- ^ Keep intermediate C file
+>                     | Trace -- ^ Generate trace at run-time (debug)
+>                     | ShowBytecode -- ^ Show generated code
+>                     | ShowParseTree -- ^ Show parse tree
+>                     | MakeHeader FilePath -- ^ Output a .h file too
+>                     | GCCOpt String -- ^ Extra GCC option
+>                     | Debug -- ^ Generate debug info
+>                     | Checking Int -- ^ Checking level (0 none)
+>   deriving Eq
+
 Raw data types. Int, Char, Bool are unboxed.
 
 > data Type = TyInt
@@ -199,6 +210,10 @@ Programs
 
 > appForm _ = False
 
+> checkLevel :: [CompileOptions] -> Int
+> checkLevel [] = 0
+> checkLevel (Checking i:_) = i
+> checkLevel (_:xs) = checkLevel xs
 
 
 Some tests

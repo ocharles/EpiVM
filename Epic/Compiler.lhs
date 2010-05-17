@@ -30,16 +30,6 @@ Brings everything together; parsing, checking, code generation
 
 > import Paths_epic
 
-> -- | (Debugging) options to give to compiler
-> data CompileOptions = KeepC -- ^ Keep intermediate C file
->                     | Trace -- ^ Generate trace at run-time (debug)
->                     | ShowBytecode -- ^ Show generated code
->                     | ShowParseTree -- ^ Show parse tree
->                     | MakeHeader FilePath -- ^ Output a .h file too
->                     | GCCOpt String -- ^ Extra GCC option
->                     | Debug -- ^ Generate debug info
->   deriving Eq
-
 > addGCC :: [CompileOptions] -> String
 > addGCC [] = ""
 > addGCC ((GCCOpt s):xs) = s ++ " " ++ addGCC xs
@@ -80,7 +70,7 @@ Chop off everything after the last / - get the directory a file is in
 >              Success ds -> do
 >                 (tmpn,tmph) <- tempfile
 >                 let hdr = outputHeader opts
->                 scchecked <- checkAll ds
+>                 scchecked <- checkAll opts ds
 >                 let simplified = simplifyAll scchecked
 >                 checked <- compileDecls simplified tmph hdr
 >                 fp <- getDataFileName "evm/closure.h"

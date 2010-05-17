@@ -10,13 +10,13 @@ checking we do (for now).
 
 > import Debug.Trace
 
-> checkAll :: Monad m => [Decl] -> m (Context, [Decl])
-> checkAll xs = do let ctxt = mkContext xs
->                  ds <- ca (mkContext xs) xs
->                  return (mkContext ds,ds)
+> checkAll :: Monad m => [CompileOptions] -> [Decl] -> m (Context, [Decl])
+> checkAll opts xs = do let ctxt = mkContext xs
+>                       ds <- ca (mkContext xs) xs
+>                       return (mkContext ds,ds)
 >    where ca ctxt [] = return []
 >          ca ctxt ((Decl nm rt fn exp fl):xs) = 
->              do (fn', newds) <- scopecheck ctxt nm fn
+>              do (fn', newds) <- scopecheck (checkLevel opts) ctxt nm fn
 >                 xs' <- ca ctxt (newds ++ xs)
 >                 return $ (Decl nm rt fn' exp fl):xs'
 >          ca ctxt (x:xs) =
@@ -35,8 +35,8 @@ Check all names are in scope in a function, and convert global references (R) to
 a new function. Returns the modified function, and a list of new declarations. The new 
 declarations will *not* have been scopechecked.
 
-> scopecheck :: Monad m => Context -> Name -> Func -> m (Func, [Decl])
-> scopecheck ctxt nm (Bind args locs exp fl) = do
+> scopecheck :: Monad m => Int -> Context -> Name -> Func -> m (Func, [Decl])
+> scopecheck checking ctxt nm (Bind args locs exp fl) = do
 >        (exp', (locs', _, ds)) <- runStateT (tc (v_ise args 0) exp) (length args, 0, [])
 >        return $ (Bind args locs' exp' fl, ds)
 >  where
@@ -44,8 +44,8 @@ declarations will *not* have been scopechecked.
 >    getRoot (MN nm i) = "_" ++ nm ++ "_" ++ show i
 >    tc env (R n) = case lookup n env of
 >                      Nothing -> case lookup n ctxt of
->                         Nothing -> return $ Const (MkInt 1234567890)
->                                    -- lift $ fail $ "Unknown name " ++ showuser n
+>                         Nothing -> if (checking > 0) then lift $ fail $ "Unknown name " ++ showuser n
+>                                    else return $ Const (MkInt 1234567890)
 >                         (Just _) -> return $ R n
 >                      (Just i) -> return $ V i
 >    tc env (Let n ty v sc) = do
