@@ -1,11 +1,8 @@
 
 Build instructions:
 
-    * Edit the Makefile to set an appopriate prefix;
-      the default is to install in ~/bin and ~/lib.
-    * make configure
-    * make install, to install just the API, or make epic_install to
-      install the command line compiler, 'epic'. 
+    * cabal install
+    * ...that's it
 
 The command line tool, epic takes a source file and produces executable
 code, via C. Separate compilation is supported, in a fairly simple
