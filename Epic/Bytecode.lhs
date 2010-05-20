@@ -20,6 +20,9 @@ at this stage.
 >             | ADDARGS TmpVar TmpVar [TmpVar]
 >             | FOREIGN Type TmpVar String [(TmpVar, Type)]
 >             | VAR TmpVar Local
+>             | GROWROOT Int
+>             | ADDROOT Int Local
+>             | DROPROOTS Int
 >             | ASSIGN Local TmpVar
 >             | TMPASSIGN TmpVar TmpVar
 >             | NOASSIGN Local TmpVar -- No-op, but flag not to eval the register
@@ -59,7 +62,7 @@ at this stage.
 
 > type Bytecode = [ByteOp]
 
-> data FunCode = Code [Type] Bytecode
+> data FunCode = Code Int [Type] Bytecode
 >   deriving Show
 
 > data CompileState = CS { arg_types :: [Type],
@@ -72,9 +75,9 @@ at this stage.
 > compile :: Context -> Name -> Func -> FunCode
 > compile ctxt fname fn@(Bind args locals def flags) = 
 >     let cs = (CS (map snd args) (length args) 1 [] 1 0)
->         code = evalState (scompile ctxt fname fn) cs 
+>         (code, state) = runState (scompile ctxt fname fn) cs 
 >         opt = peephole' evalled code in
->               Code (map snd args) opt
+>               Code (num_locals state) (map snd args) opt
 >   where evalled | elem Strict flags = [] --take locals [0..]
 >                 | otherwise = []
 
@@ -85,12 +88,16 @@ at this stage.
 >     do -- put (CS args (length args) 1)
 >        code <- ecomp (False, True) Tail def 0 (length args)
 >        cs <- get
->        return $ (LOCALS (num_locals cs)):
+>        return $ (LOCALS (num_locals cs)):(GROWROOT (num_locals cs)):
 >                 (TRACE (show fname) [0..(length args)-1]):
+>                 addRoots (length args) ++
 >                 (TMPS (max_tmp cs)):(CONSTS (string_pool cs)):code ++
 >                   [RETURN 0]
 
 >   where
+
+>     addRoots 0 = []
+>     addRoots n = ADDROOT (n-1) (n-1) : addRoots (n-1)
 
 >     new_tmp :: State CompileState Int
 >     new_tmp = do cs <- get
@@ -220,7 +227,7 @@ place.
 >            let assigncode = case ty of
 >                               TyUnit -> [ASSIGN vs reg']
 >                               _ -> [ASSIGN vs reg']
->            return $ valcode ++ assigncode ++ scopecode
+>            return $ valcode ++ assigncode ++ (ADDROOT vs vs):scopecode
 >     ecomp lazy tcall (Error str) reg vs = return [ERROR str]
 >     ecomp lazy tcall Impossible reg vs = return [ERROR "The impossible happened."]
 >     ecomp lazy tcall (ForeignCall ty fn argtypes) reg vs = do

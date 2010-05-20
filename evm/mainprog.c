@@ -11,12 +11,15 @@ void* _do__U_main();
 
 void** _epic_top_of_stack;
 
+VMState* vm;
+
 int main(int argc, char* argv[]) {
     void* stacktop = NULL;
     _epic_top_of_stack = (void**)&stacktop;
 
     GC_init();
-    init_evm();
+    vm = init_evm();
+
 //    GC_use_entire_heap = 1;
 //    GC_free_space_divisor = 2;
 //    GC_enable_incremental();
@@ -36,5 +39,12 @@ int main(int argc, char* argv[]) {
     fprintf(stderr, "Heap: %d\n", GC_get_heap_size());
     fprintf(stderr, "Free: %d\n", GC_get_free_bytes());
     fprintf(stderr, "Total: %d\n", GC_get_total_bytes());*/
+
+    if (vm->start_roots!=vm->roots) {
+	fprintf(stderr, "Warning: roots left %d\n", vm->roots-vm->start_roots);
+    }
+
+    close_evm(vm);
+
     return 0; 
 }

@@ -87,7 +87,7 @@
 > thunk fn = "_wrap_" ++ showC fn
 
 > compileBody :: FunCode -> String
-> compileBody (Code args bytecode) = 
+> compileBody (Code numlocs args bytecode) = 
 >     let (code, b) = runState (cgs bytecode) 0 in
 >         if (b>0) then "void** block;\n" ++ code else code --  = EMALLOC("++show b++"*sizeof(void*));\n"++code else code
 >   where
@@ -102,8 +102,9 @@
 
 >    cg (CALL t fn args) = return $ tmp t ++ " = " ++ quickcall fn ++ 
 >                          targs "(" args ++ ");"
->    cg (TAILCALL t fn args) = return $ "return " ++ quickcall fn ++ 
->                          targs "(" args ++ ");"
+>    cg (TAILCALL t fn args) 
+>           = return $ "DROPROOTS(" ++ show numlocs ++"); return " ++ 
+>                      quickcall fn ++ targs "(" args ++ ");"
 >    cg (THUNK t ar fn []) = do
 >        return $ tmp t ++ 
 >           " = (void*)CLOSURE(" ++ thunk fn ++ ", " ++ 
@@ -121,6 +122,9 @@
 >                                   (fn ++ "(" ++ foreignArgs args ++ ")")
 >                                   ++ ";"
 >    cg (VAR t l) = return $ tmp t ++ " = " ++ loc l ++ ";"
+>    cg (GROWROOT i) = return $ "GROWROOT(" ++ show i ++ ");"
+>    cg (ADDROOT i l) = return $ "ADDROOT(" ++ show (i+1) ++ ", " ++ loc l ++ ");"
+>    cg (DROPROOTS i) = return $ "DROPROOTS(" ++ show i ++ ");"
 >    cg (ASSIGN l t) = return $ loc l ++ " = " ++ tmp t ++ ";"
 >    cg (TMPASSIGN t1 t2) = return $ tmp t1 ++ " = " ++ tmp t2 ++ ";"
 >    cg (NOASSIGN l t) = return $ "// " ++ loc l ++ " = " ++ tmp t ++ ";"
@@ -178,8 +182,8 @@
 >    cg (EVAL v False) = return $ tmp v ++ "=(void*)EVAL_NOUP((VAL)"++tmp v++");"
 >    cg (EVALINT v True) = return $ tmp v ++ "=(void*)EVALINT((VAL)"++tmp v++");"
 >    cg (EVALINT v False) = return $ tmp v ++ "=(void*)EVALINT_NOUP((VAL)"++tmp v++");"
->    cg (RETURN t) = return $ "return "++tmp t++";"
->    cg DRETURN = return $ "return NULL;"
+>    cg (RETURN t) = return $ "DROPROOTS(" ++ show numlocs ++"); return "++tmp t++";"
+>    cg DRETURN = return $ "DROPROOTS(" ++ show numlocs ++"); return NULL;"
 >    cg (ERROR s) = return $ "ERROR("++show s++");"
 >    cg (COMMENT s) = return $ " // " ++ show s
 >    cg (TRACE s args) = return $ "TRACE {\n\tprintf(\"%s\\n\", " ++ show s ++ ");\n" ++

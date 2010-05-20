@@ -100,6 +100,11 @@ typedef struct {
     void** args;
 } con;
 
+typedef struct {
+    VAL* roots;
+    VAL* start_roots;
+} VMState;
+
 #define UPDATE(x,res) if (ISINT(res)) { x = MKINT(GETINT(res)); } else { \
                       SETTY(x, GETTY(res)); x->info=res->info; }
 #define TAG(x) (((con*)((Closure*)x)->info)->tag & 65535)
@@ -173,10 +178,17 @@ VAL CLOSURE_APPLY5(VAL x, VAL a1, VAL a2, VAL a3, VAL a4, VAL a5);
 // array of zero arity constructors. We don't need more than one of each...
 extern VAL* zcon;
 
+// Roots for the garbage collector
+extern VMState* vm;
+
 #define MKINT(x) ((void*)((x)<<1)+1)
 #define GETINT(x) ((eint)(x)>>1)
 #define GETPTR(x) ((void*)(((VAL)(x))->info))
 #define GETSTR(x) ((char*)(((VAL)(x))->info))
+
+#define GROWROOT(x) vm->roots+=x;
+#define ADDROOT(x, v) vm->roots[-x]=v;
+#define DROPROOTS(x) vm->roots-=x;
 
 #define INTTOEINT(x) ((eint)(x))
 #define EINTTOINT(x) ((int)(x))
@@ -200,7 +212,8 @@ void* MKFREE(int x);
 void ERROR(char* msg);
 
 // Initialise everything
-void init_evm();
+VMState* init_evm();
+void close_evm(VMState* vm);
 
 void* FASTMALLOC(int size);
 

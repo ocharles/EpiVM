@@ -760,7 +760,7 @@ void* MKFREE(int x)
     return c;
 }
 
-void init_evm()
+VMState* init_evm()
 {
     int i;
     one = MKINT(1);
@@ -769,4 +769,15 @@ void init_evm()
 	zcon[i] = CONSTRUCTORn(i,0,0);
     }
     EREADY(zcon);
+
+    VMState* vm = malloc(sizeof(VMState));
+    vm->roots = malloc(sizeof(VAL)*1024);
+    vm->start_roots = vm->roots;
+    return vm;
+}
+
+void close_evm(VMState* vm)
+{
+    free(vm->roots);
+    free(vm);
 }
