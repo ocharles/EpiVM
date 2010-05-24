@@ -1,7 +1,7 @@
 CC = gcc
 #CFLAGS = -Wall -g
 CFLAGS = -Wall -O3
-OBJS = closure.o stdfuns.o
+OBJS = closure.o stdfuns.o emalloc.o
 INSTALLDIR = ${PREFIX}/lib/evm
 
 TARGET = libevm.a
@@ -19,5 +19,6 @@ install:
 clean:
 	rm -f ${OBJS} ${TARGET}
 
-closure.o : closure.h
-stdfuns.o : stdfuns.h closure.h
+closure.o : closure.h emalloc.h
+stdfuns.o : stdfuns.h closure.h emalloc.h
+emalloc.o : closure.h emalloc.h

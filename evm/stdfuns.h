@@ -66,6 +66,8 @@ int strHead(char* str);
 char* strTail(char* str);
 char* strCons(int h, char* str);
 char* strrev(char* str);
+char* substr(char* str, int start, int len);
+int strFind(char* str, char c);
 
 char* append(char* x, char* y);
 

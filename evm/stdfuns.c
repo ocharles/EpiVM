@@ -123,6 +123,23 @@ char* strrev(char* str) {
     return buf;
 }
 
+char* substr(char* str, int start, int len) {
+    if (len<0) len=0;
+    char* buf = EMALLOC((len+1)*sizeof(char));
+    strncpy(buf, str+start, len);
+    buf[len]='\0';
+    return buf;
+}
+
+int strFind(char* str, char c) {
+    int i = 0;
+    while(*str!='\0') {
+	if (*str==c) return i;
+	++i; ++str;
+    }
+    return -1;
+}
+
 char* append(char* x, char* y) {
     char* buf = EMALLOC((strlen(x)+strlen(y))*sizeof(char));
     strcpy(buf,x);

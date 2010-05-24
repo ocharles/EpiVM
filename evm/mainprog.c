@@ -34,15 +34,17 @@ int main(int argc, char* argv[]) {
 
     _do___U__main();
 
-    GC_gcollect();
+//    GC_gcollect();
 /*    fprintf(stderr, "%d\n", GC_gc_no);
     fprintf(stderr, "Heap: %d\n", GC_get_heap_size());
     fprintf(stderr, "Free: %d\n", GC_get_free_bytes());
     fprintf(stderr, "Total: %d\n", GC_get_total_bytes());*/
 
+/*
     if (vm->start_roots!=vm->roots) {
 	fprintf(stderr, "Warning: roots left %d\n", vm->roots-vm->start_roots);
     }
+*/
 
     close_evm(vm);
 

@@ -16,10 +16,10 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#define EMALLOC GC_malloc
+#define EMALLOC(x) GC_malloc(x)
 #define EREADY(x) 
-#define EREALLOC GC_realloc
-#define EFREE GC_free
+#define EREALLOC(ptr,x) GC_realloc(ptr,x)
+#define EFREE(x)
 
 typedef intptr_t eint;
 
@@ -103,7 +103,19 @@ typedef struct {
 typedef struct {
     VAL* roots;
     VAL* start_roots;
+    VAL* from_space;
+    VAL* to_space;
+    VAL* nursery;
+
+    int heap_size;
+    int next;
+    int next_nursery;
 } VMState;
+
+extern void* e_malloc(VMState* vm, size_t size);
+extern void* e_realloc(VMState* vm, void* ptr, size_t size);
+
+#define INIT_HEAP_SIZE 1000000
 
 #define UPDATE(x,res) if (ISINT(res)) { x = MKINT(GETINT(res)); } else { \
                       SETTY(x, GETTY(res)); x->info=res->info; }
@@ -186,9 +198,12 @@ extern VMState* vm;
 #define GETPTR(x) ((void*)(((VAL)(x))->info))
 #define GETSTR(x) ((char*)(((VAL)(x))->info))
 
-#define GROWROOT(x) vm->roots+=x;
-#define ADDROOT(x, v) vm->roots[-x]=v;
-#define DROPROOTS(x) vm->roots-=x;
+#define GROWROOT 
+// VAL* rootbase = vm->roots;
+#define ADDROOT(v) 
+// *(vm->roots)=v; vm->roots++;
+#define DROPROOTS 
+// vm->roots=rootbase;
 
 #define INTTOEINT(x) ((eint)(x))
 #define EINTTOINT(x) ((int)(x))

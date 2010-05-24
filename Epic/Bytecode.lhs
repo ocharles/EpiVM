@@ -21,7 +21,8 @@ at this stage.
 >             | FOREIGN Type TmpVar String [(TmpVar, Type)]
 >             | VAR TmpVar Local
 >             | GROWROOT Int
->             | ADDROOT Int Local
+>             | ADDVARROOT Local
+>             | ADDTMPROOT TmpVar
 >             | DROPROOTS Int
 >             | ASSIGN Local TmpVar
 >             | TMPASSIGN TmpVar TmpVar
@@ -77,7 +78,7 @@ at this stage.
 >     let cs = (CS (map snd args) (length args) 1 [] 1 0)
 >         (code, state) = runState (scompile ctxt fname fn) cs 
 >         opt = peephole' evalled code in
->               Code (num_locals state) (map snd args) opt
+>               Code (num_locals state + next_tmp state) (map snd args) opt
 >   where evalled | elem Strict flags = [] --take locals [0..]
 >                 | otherwise = []
 
@@ -88,16 +89,14 @@ at this stage.
 >     do -- put (CS args (length args) 1)
 >        code <- ecomp (False, True) Tail def 0 (length args)
 >        cs <- get
->        return $ (LOCALS (num_locals cs)):(GROWROOT (num_locals cs)):
+>        return $ (LOCALS (num_locals cs)):
+>                 (GROWROOT (num_locals cs + next_tmp cs)):
 >                 (TRACE (show fname) [0..(length args)-1]):
->                 addRoots (length args) ++
+>                 map ADDVARROOT [0..(length args)-1] ++
 >                 (TMPS (max_tmp cs)):(CONSTS (string_pool cs)):code ++
 >                   [RETURN 0]
 
 >   where
-
->     addRoots 0 = []
->     addRoots n = ADDROOT (n-1) (n-1) : addRoots (n-1)
 
 >     new_tmp :: State CompileState Int
 >     new_tmp = do cs <- get
@@ -150,23 +149,24 @@ place.
 >       savetmp <- get_tmp
 >       code <- acomp tcall lazy (R x) [] reg vs
 >       set_tmp savetmp
->       return code
+>       return (code ++ [ADDTMPROOT reg])
 >     ecomp lazy tcall (App f as) reg vs = do
 >       savetmp <- get_tmp
 >       code <- acomp tcall lazy f as reg vs
 >       set_tmp savetmp
->       return code
+>       return (code ++ [ADDTMPROOT reg])
 >     ecomp (lazy, update) tcall (Lazy e) reg vs = ecomp (True, update) tcall e reg vs
 >     ecomp (lazy, update) tcall (Effect e) reg vs = 
 >         do ecode <- ecomp (lazy, False) tcall e reg vs
->            return (ecode ++ [EVAL reg False])
+>            return (ecode ++ [EVAL reg False, ADDTMPROOT reg])
 >     ecomp lazy tcall (Con t as) reg vs = 
 >         do (argcode, argregs) <- ecomps lazy as vs
->            return $ argcode ++ [CON reg t argregs]
+>            return $ argcode ++ [CON reg t argregs, ADDTMPROOT reg]
 >     ecomp lazy tcall (Proj con i) reg vs =
 >         do reg' <- new_tmp
 >            concode <- ecomp lazy Middle con reg' vs
->            return $ concode ++ [EVAL reg' (snd lazy), PROJ reg reg' i]
+>            return $ concode ++ [EVAL reg' (snd lazy), PROJ reg reg' i,
+>                                 ADDTMPROOT reg]
 >     ecomp lazy tcall (Const c) reg vs = ccomp c reg
 >     ecomp lazy tcall (Case scrutinee alts) reg vs =
 >         do screg <- new_tmp
@@ -218,7 +218,8 @@ place.
 >            rcode <- ecomp lazy Middle r rreg vs
 >            set_tmp savetmp
 >            return $ lcode ++ [EVAL lreg (snd lazy)] ++ 
->                     rcode ++ [EVAL rreg (snd lazy), OP reg op lreg rreg]
+>                     rcode ++ [EVAL rreg (snd lazy), OP reg op lreg rreg,
+>                               ADDTMPROOT reg]
 >     ecomp lazy tcall (Let nm ty val scope) reg vs =
 >         do loc <- new_locals 1
 >            reg' <- new_tmp
@@ -227,7 +228,7 @@ place.
 >            let assigncode = case ty of
 >                               TyUnit -> [ASSIGN vs reg']
 >                               _ -> [ASSIGN vs reg']
->            return $ valcode ++ assigncode ++ (ADDROOT vs vs):scopecode
+>            return $ valcode ++ assigncode ++ (ADDVARROOT vs):scopecode
 >     ecomp lazy tcall (Error str) reg vs = return [ERROR str]
 >     ecomp lazy tcall Impossible reg vs = return [ERROR "The impossible happened."]
 >     ecomp lazy tcall (ForeignCall ty fn argtypes) reg vs = do
@@ -236,13 +237,15 @@ place.
 >           (argcode, argregs) <- ecompsEv lazy args vs
 >           -- let evalcode = if (snd lazy) then [] else map (\x -> EVAL x (snd lazy)) argregs
 >           set_tmp savetmp
->           return $ argcode ++ [FOREIGN ty reg fn (zip argregs types)]
+>           return $ argcode ++ [FOREIGN ty reg fn (zip argregs types),
+>                                ADDTMPROOT reg]
 >     ecomp lazy tcall (LazyForeignCall ty fn argtypes) reg vs = do
 >           savetmp <- get_tmp
 >           let (args,types) = unzip argtypes
 >           (argcode, argregs) <- ecomps lazy args vs
 >           set_tmp savetmp
->           return $ argcode ++ [FOREIGN ty reg fn (zip argregs types)]
+>           return $ argcode ++ [FOREIGN ty reg fn (zip argregs types),
+>                                ADDTMPROOT reg]
 
 >     ecomps :: (Bool, Bool) -> [Expr] -> Int -> State CompileState (Bytecode, [TmpVar])
 >     ecomps lazy e vs = ecomps' lazy [] [] e vs

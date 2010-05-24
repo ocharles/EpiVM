@@ -1,4 +1,6 @@
 #include "closure.h"
+#include "emalloc.h"
+
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
@@ -770,14 +772,26 @@ VMState* init_evm()
     }
     EREADY(zcon);
 
+/*
     VMState* vm = malloc(sizeof(VMState));
     vm->roots = malloc(sizeof(VAL)*1024);
     vm->start_roots = vm->roots;
-    return vm;
+
+    vm->from_space = malloc(INIT_HEAP_SIZE*2);
+    vm->to_space = malloc(INIT_HEAP_SIZE*2);
+    vm->nursery = malloc(INIT_HEAP_SIZE);
+    vm->heap_size = INIT_HEAP_SIZE;
+    vm->next_nursery = 0;
+    vm->next = 0;
+*/
+    return NULL;
 }
 
 void close_evm(VMState* vm)
 {
+    /*    free(vm->from_space);
+    free(vm->to_space);
+    free(vm->nursery);
     free(vm->roots);
-    free(vm);
+    free(vm);*/
 }
