@@ -281,6 +281,7 @@
 > epicToC t TyBigInt = "*(GETBIGINT("++ t ++"))"
 > epicToC t TyString = "GETSTR("++ t ++")"
 > epicToC t TyPtr = "GETPTR("++ t ++")"
+> epicToC t TyChar = "EINTTOINT(GETINT("++ t ++"))"
 > epicToC t _ = t
 
 > foreignArg (t, ty) = epicToC (tmp t) ty
