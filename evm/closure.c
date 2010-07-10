@@ -704,6 +704,21 @@ void* MKBIGINT(mpz_t* big)
     return c;
 }
 
+void* MKFLOAT(double f)
+{
+    VAL c = EMALLOC(sizeof(Closure)+sizeof(double));
+    double* num = (double*)(c+1);
+    *num = f;
+
+    SETTY(c, FLOAT);
+    c->info = (void*)num;
+    EREADY(c);
+
+    return c;
+}
+
+
+
 /*
 int GETINT(void* x)
 {
@@ -713,9 +728,13 @@ int GETINT(void* x)
 
 mpz_t* GETBIGINT(void* x)
 {
-    return ((mpz_t*)(((VAL)x)->info));
+    return (mpz_t*)(((VAL)x)->info);
 }
 
+double GETFLOAT(void* x)
+{
+    return *((double*)(((VAL)x)->info));
+}
 
 void* MKSTR(char* x)
 {

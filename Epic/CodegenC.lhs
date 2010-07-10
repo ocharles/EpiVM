@@ -263,6 +263,7 @@
 > cToEpic var TyInt = "MKINT(INTTOEINT(" ++ var ++ "))"
 > cToEpic var TyPtr = "MKPTR(" ++ var ++ ")"
 > cToEpic var TyBigInt = "MKBIGINT((mpz_t*)(" ++ var ++ "))"
+> cToEpic var TyFloat = "MKFLOAT(" ++ var ++ ")"
 > cToEpic var TyUnit = "NULL"
 > cToEpic var _ = "(void*)(" ++ var ++")"
 
@@ -280,6 +281,7 @@
 > epicToC t TyInt = "EINTTOINT(GETINT("++ t ++"))"
 > epicToC t TyBigInt = "*(GETBIGINT("++ t ++"))"
 > epicToC t TyString = "GETSTR("++ t ++")"
+> epicToC t TyFloat = "GETFLOAT(" ++ t ++ ")"
 > epicToC t TyPtr = "GETPTR("++ t ++")"
 > epicToC t TyChar = "EINTTOINT(GETINT("++ t ++"))"
 > epicToC t _ = t
@@ -296,6 +298,10 @@
 > doOp t Minus l r = tmp t ++ " = INTOP(-,"++tmp l ++ ", "++tmp r++");"
 > doOp t Times l r = tmp t ++ " = MULT("++tmp l ++ ", "++tmp r++");"
 > doOp t Divide l r = tmp t ++ " = INTOP(/,"++tmp l ++ ", "++tmp r++");"
+> doOp t FPlus l r = tmp t ++ " = FLOATOP(+,"++tmp l ++ ", "++tmp r++");"
+> doOp t FMinus l r = tmp t ++ " = FLOATOP(-,"++tmp l ++ ", "++tmp r++");"
+> doOp t FTimes l r = tmp t ++ " = FLOATOP(*,"++tmp l ++ ", "++tmp r++");"
+> doOp t FDivide l r = tmp t ++ " = FLOATOP(/,"++tmp l ++ ", "++tmp r++");"
 > doOp t ShL l r = tmp t ++ " = INTOP(<<,"++tmp l ++ ", "++tmp r++");"
 > doOp t ShR l r = tmp t ++ " = INTOP(>>,"++tmp l ++ ", "++tmp r++");"
 > doOp t OpEQ l r = tmp t ++ " = INTOP(==,"++tmp l ++ ", "++tmp r++");"
@@ -303,6 +309,11 @@
 > doOp t OpLT l r = tmp t ++ " = INTOP(<,"++tmp l ++ ", "++tmp r++");"
 > doOp t OpGE l r = tmp t ++ " = INTOP(>=,"++tmp l ++ ", "++tmp r++");"
 > doOp t OpLE l r = tmp t ++ " = INTOP(<=,"++tmp l ++ ", "++tmp r++");"
+> doOp t OpFEQ l r = tmp t ++ " = FLOATBOP(==,"++tmp l ++ ", "++tmp r++");"
+> doOp t OpFGT l r = tmp t ++ " = FLOATBOP(>,"++tmp l ++ ", "++tmp r++");"
+> doOp t OpFLT l r = tmp t ++ " = FLOATBOP(<,"++tmp l ++ ", "++tmp r++");"
+> doOp t OpFGE l r = tmp t ++ " = FLOATBOP(>=,"++tmp l ++ ", "++tmp r++");"
+> doOp t OpFLE l r = tmp t ++ " = FLOATBOP(<=,"++tmp l ++ ", "++tmp r++");"
 
 Write out code for an export
 

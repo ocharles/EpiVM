@@ -84,6 +84,20 @@ char* intToStr(int x)
     return buf;
 }
 
+double strToFloat(char* str)
+{
+//    printf("%s, %f\n",str, strtod(str,NULL));
+    return strtod(str,NULL);
+}
+
+char* floatToStr(double x)
+{
+//    printf("%f\n",x);
+    char* buf = EMALLOC(32);
+    sprintf(buf,"%g",x);
+    return buf;
+}
+
 void* getNative(void * fn) {
     return fn;
 }

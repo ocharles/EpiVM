@@ -78,12 +78,21 @@
 >       | TokenMinus
 >       | TokenTimes
 >       | TokenDivide
+>       | TokenFPlus
+>       | TokenFMinus
+>       | TokenFTimes
+>       | TokenFDivide
 >       | TokenEquals
 >       | TokenEQ
 >       | TokenGE
 >       | TokenLE
 >       | TokenGT
 >       | TokenLT
+>       | TokenFEQ
+>       | TokenFGE
+>       | TokenFLE
+>       | TokenFGT
+>       | TokenFLT
 >       | TokenShL
 >       | TokenShR
 >       | TokenArrow
@@ -136,10 +145,19 @@
 > lexer cont ('}':cs) = cont TokenCCB cs
 > lexer cont ('[':cs) = cont TokenOSB cs
 > lexer cont (']':cs) = cont TokenCSB cs
+> lexer cont ('+':'.':cs) = cont TokenFPlus cs
+> lexer cont ('-':'.':cs) = cont TokenFMinus cs
+> lexer cont ('*':'.':cs) = cont TokenFTimes cs
+> lexer cont ('/':'.':cs) = cont TokenFDivide cs
 > lexer cont ('+':cs) = cont TokenPlus cs
 > lexer cont ('-':cs) = cont TokenMinus cs
 > lexer cont ('*':cs) = cont TokenTimes cs
 > lexer cont ('/':cs) = cont TokenDivide cs
+> lexer cont ('=':'=':'.':cs) = cont TokenFEQ cs
+> lexer cont ('>':'=':'.':cs) = cont TokenFGE cs
+> lexer cont ('<':'=':'.':cs) = cont TokenFLE cs
+> lexer cont ('>':'.':cs) = cont TokenFGT cs
+> lexer cont ('<':'.':cs) = cont TokenFLT cs
 > lexer cont ('=':'=':cs) = cont TokenEQ cs
 > lexer cont ('>':'=':cs) = cont TokenGE cs
 > lexer cont ('<':'=':cs) = cont TokenLE cs
@@ -156,7 +174,7 @@
 > lexer cont ('%':cs) = lexSpecial cont cs
 > lexer cont (c:cs) = lexError c cs
  
-> lexError c s l = failP (show l ++ ": Unrecognised token '" ++ [c] ++ "'\n") s l
+> lexError c s f l = failP (show l ++ ": Unrecognised token '" ++ [c] ++ "'\n") s f l
 
 > lexerEatComment nls cont ('-':'}':cs)
 >     = \fn line -> lexer cont cs fn (line+nls)

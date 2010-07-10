@@ -53,6 +53,9 @@ int do_utime() ;
 int strToInt(char* str);
 char* intToStr(int x);
 
+double strToFloat(char* str);
+char* floatToStr(double x);
+
 mpz_t* strToBigInt(char* str);
 char* bigIntToStr(mpz_t x);
 

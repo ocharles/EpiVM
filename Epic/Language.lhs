@@ -122,6 +122,8 @@ Get the arity of a definition in the context
 >    compare _ _ = EQ
 
 > data Op = Plus | Minus | Times | Divide | OpEQ | OpLT | OpLE | OpGT | OpGE
+>         | FPlus | FMinus | FTimes | FDivide
+>         | OpFEQ | OpFLT | OpFLE | OpFGT | OpFGE
 >         | ShL  | ShR
 >   deriving (Show, Eq)
 

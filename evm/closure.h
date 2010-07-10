@@ -34,6 +34,8 @@ typedef intptr_t eint;
 #define MKUNIT (void*)0
 
 #define INTOP(op,x,y) MKINT((((eint)x)>>1) op (((eint)y)>>1))
+#define FLOATOP(op,x,y) MKFLOAT(((GETFLOAT(x)) op (GETFLOAT(y))))
+#define FLOATBOP(op,x,y) MKINT(((GETFLOAT(x)) op (GETFLOAT(y))))
 #define ADD(x,y) (void*)(((eint)x)+(((eint)y)-1))
 #define MULT(x,y) (MKINT((((eint)x)>>1) * (((eint)y)>>1)))
 #define CHECKEVALUATED(x) if(ISFUN(x) || ISTHUNK(x) \
@@ -214,11 +216,13 @@ void* MKBIGINT(mpz_t* bigint);
 
 void* MKSTR(char* str);
 void* MKPTR(void* ptr);
+void* MKFLOAT(double x);
 
 // Get values from a closure
 //int GETINT(void* x);
 
 mpz_t* GETBIGINT(void* x);
+double GETFLOAT(void* x);
 //void* GETPTR(void* x);
 
 void* MKFREE(int x);

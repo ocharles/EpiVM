@@ -67,14 +67,23 @@ import Epic.Lexer
       '-'             { TokenMinus }
       '*'             { TokenTimes }
       '/'             { TokenDivide }
+      fplus           { TokenFPlus }
+      fminus          { TokenFMinus }
+      ftimes          { TokenFTimes }
+      fdiv            { TokenFDivide }
       '='             { TokenEquals }
       eq              { TokenEQ }
       le              { TokenLE }
       ge              { TokenGE }
+      feq             { TokenFEQ }
+      fle             { TokenFLE }
+      fge             { TokenFGE }
       shl             { TokenShL }
       shr             { TokenShR }
       '<'             { TokenLT }
       '>'             { TokenGT }
+      flt             { TokenFLT }
+      fgt             { TokenFGT }
       ':'             { TokenColon }
       '!'             { TokenProj }
       ';'             { TokenSemi }
@@ -92,12 +101,12 @@ import Epic.Lexer
 %nonassoc lazy
 %left LET
 %left IF
-%left eq
+%left eq feq
 %left ';'
-%left '<' '>' le ge
+%left '<' '>' le ge flt fgt fle fge
 %left shl shr
-%left '+' '-'
-%left '*' '/'
+%left '+' '-' fplus fminus
+%left '*' '/' ftimes fdiv
 %left NEG
 %left '!'
 %nonassoc '('
@@ -199,6 +208,13 @@ MathExpr : Expr '+' Expr { Op Plus $1 $3 }
          | '-' Expr %prec NEG { Op Minus (Const (MkInt 0)) $2 }
          | Expr '*' Expr { Op Times $1 $3 }
          | Expr '/' Expr { Op Divide $1 $3 }
+
+         | Expr fplus Expr { Op FPlus $1 $3 }
+         | Expr fminus Expr { Op FMinus $1 $3 }
+         | fminus Expr %prec NEG { Op FMinus (Const (MkInt 0)) $2 }
+         | Expr ftimes Expr { Op FTimes $1 $3 }
+         | Expr fdiv Expr { Op FDivide $1 $3 }
+
          | Expr shl Expr { Op ShL $1 $3 }
          | Expr shr Expr { Op ShR $1 $3 }
          | Expr '<' Expr { Op OpLT $1 $3 }
@@ -206,6 +222,12 @@ MathExpr : Expr '+' Expr { Op Plus $1 $3 }
          | Expr le Expr { Op OpLE $1 $3 }
          | Expr ge Expr { Op OpGE $1 $3 }
          | Expr eq Expr { Op OpEQ $1 $3 }
+
+         | Expr flt Expr { Op OpFLT $1 $3 }
+         | Expr fgt Expr { Op OpFGT $1 $3 }
+         | Expr fle Expr { Op OpFLE $1 $3 }
+         | Expr fge Expr { Op OpFGE $1 $3 }
+         | Expr feq Expr { Op OpFEQ $1 $3 }
 
 ExprList :: { [Expr] }
 ExprList : { [] }
