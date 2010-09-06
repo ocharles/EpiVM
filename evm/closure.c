@@ -9,6 +9,12 @@
 
 VAL one;
 VAL* zcon;
+
+ALLOCATOR allocate;
+REALLOCATOR reallocate;
+pool_t** pools = NULL;
+pool_t* pool = NULL;
+
 //void* blob = NULL;
 //int blobnext = 0;
 
@@ -98,6 +104,131 @@ void assertIntR(Closure* c)
     if (!ISINT(c)) { dumpClosure(c); assert(0); }
 }
 
+void* pool_malloc(size_t size) {
+    *((size_t*)(pool->block_loc)) = size;
+    void* mem = (void*)(((size_t*)(pool->block_loc))+1);
+    pool->block_loc+=size+sizeof(size_t);
+
+    return mem;
+}
+
+void* pool_realloc(void* ptr, size_t size) {
+    *((size_t*)(pool->block_loc)) = size;
+    void* mem = (void*)(((size_t*)(pool->block_loc))+1);
+    pool->block_loc+=size+sizeof(size_t);
+
+    size_t orig_size = *(((size_t*)ptr)-1);
+    memcpy(mem, ptr, orig_size);
+
+    return mem;
+}
+
+VAL copyFun(fun* f, pool_t* pool) {
+    VAL c = EMALLOC(sizeof(Closure)+sizeof(fun));
+    fun* fn = (fun*)(c+1);
+    fn->fn = f->fn;
+    fn->arity = f->arity;
+    int args = f->arg_end - f->args;
+    fn->args = MKARGS(args);
+    fn->arg_end = fn->args + args;
+    void** p = fn->args;
+    void** a;
+
+    for(a = f->args; a < f->arg_end; ++a, ++p) {
+	*p = copy((VAL)(*a), pool);
+    }
+    
+    SETTY(c, FUN);
+    c->info = (void*)fn;
+    EREADY(c);
+    return c;
+}
+
+VAL copyThunk(thunk* t, pool_t* pool) {
+    VAL c = EMALLOC(sizeof(Closure)+sizeof(fun));
+    thunk* fn = (thunk*)(c+1);
+    
+    fn->fn = t->fn;
+    fn->args = MKARGS(t->numargs);
+    fn->numargs = t->numargs;
+
+    void** a = t->args;
+    void** p = fn->args;
+    int i;
+
+    for(i=0; i < t->numargs; ++i, ++a, ++p) {
+	*p = copy((VAL)(*a), pool);
+    }
+
+    SETTY(c,THUNK);
+    c->info = (void*)fn;
+    EREADY(c);
+    return c;
+}
+
+VAL copyCon(con* c, pool_t* pool) {
+    VAL nc = EMALLOC(sizeof(Closure)+sizeof(con));
+    con* cn = (con*)(nc+1);
+    int arity = c->tag >> 16;
+
+//    printf("COPY CON %d %d\n", c->tag & 65535, arity);
+
+    cn->tag = c->tag;
+    cn->args = MKARGS(arity);
+    
+    void** a = c->args;
+    void** p = cn->args;
+    int i;
+
+    for(i=0; i<arity; ++i, ++a, ++p) {
+//	printf("COPY ARG %d\n", *a);
+	*p = copy((VAL)(*a), pool);
+    }
+
+    SETTY(nc, CON);
+    nc->info = (void*)cn;
+    EREADY(nc);
+    return nc;
+}
+
+
+// TODO: Preserve sharing. But this function isn't really intended for that
+// sort of thing.
+
+VAL copy(VAL x, pool_t* pool) {
+    // only copy things that were allocated in the given pool.
+    if (x>=(VAL)(pool->block) && x<(VAL)(pool->block_end)) {
+	switch(GETTY(x)) {
+	case FUN:
+	    return copyFun((fun*)x->info, pool);
+	case THUNK:
+	    return copyThunk((thunk*)x->info, pool);
+	case CON:
+	    return copyCon((con*)x->info, pool);
+	case INT:
+	    return x;
+	case BIGINT:
+	    return MKBIGINT((mpz_t*)(x->info));
+	case FLOAT:
+	    return MKFLOAT(*((double*)x->info));
+	case BIGFLOAT:
+	    assert(0); // NOT IMPLEMENTED YET
+	case STRING:
+	    return MKSTR((char*)x->info);
+	case UNIT:
+	    return MKUNIT;
+	case PTR:
+	    return MKPTR(x->info);
+	case FREEVAR:
+	    assert(0); // NOT IMPLEMENTED
+	}
+	return x;
+    }
+    else {
+	return x;
+    }
+}
+
 inline VAL CLOSURE(func x, int arity, int args, void** block)
 {
     VAL c = EMALLOC(sizeof(Closure)+sizeof(fun)); // MKCLOSURE;
@@ -160,6 +291,7 @@ inline VAL CONSTRUCTOR2(int tag, VAL a1, VAL a2)
     SETTY(c,CON);
     c->info = (void*)cn;
     EREADY(c);
+
     return c;
 }
 

@@ -102,6 +102,7 @@ Get the arity of a definition in the context
 >           | Let Name Type Expr Expr -- Let binding
 >           | Error String -- Exit with error message
 >           | Impossible -- Claimed impossible to reach code
+>           | WithMem Expr Expr -- evaluate with manual allocation
 >           | ForeignCall Type String [(Expr, Type)] -- Foreign function call
 >           | LazyForeignCall Type String [(Expr, Type)] -- Foreign function call
 >   deriving Eq
@@ -151,6 +152,7 @@ Get the arity of a definition in the context
 >                          show v ++ " in " ++ show e
 >     show (Error e) = "error(" ++ show e ++ ")"
 >     show Impossible = "Impossible"
+>     show (WithMem m e) = "%memory(" ++ show m ++ ", " ++ show e ++ ")"
 >     show (ForeignCall t s as) = "foreign " ++ show t ++ " " ++
 >                                 show s ++ show as
 >     show (LazyForeignCall t s as) = "lazy foreign " ++ show t ++ " " ++

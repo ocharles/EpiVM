@@ -148,6 +148,10 @@
 >    cg (BREAKFALSE t) 
 >           = return $ -- "assertInt(" ++ tmp t ++ ");\n" ++
 >                      "if (!GETINT(" ++ tmp t ++ ")) break;"
+>    cg (MEMORY r t b) = do bcode <- cgs b
+>                           return $ "NEWPOOL(" ++ tmp t ++ ");\n" ++
+>                                     bcode ++
+>                                    "CLEARPOOL(" ++ tmp r ++ ");\n"
 >    cg (WHILE t b) = do tcode <- cgs t
 >                        bcode <- cgs b
 >                        return $ "while (1) { " ++ tcode ++ "\n" ++ bcode ++ "}"

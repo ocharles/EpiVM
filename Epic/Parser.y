@@ -49,6 +49,7 @@ import Epic.Lexer
       then            { TokenThen }
       else            { TokenElse }
       while           { TokenWhile }
+      memory          { TokenMemory }
       unused          { TokenUnused }
       in              { TokenIn }
       lazy            { TokenLazy }
@@ -178,6 +179,7 @@ Expr : name { R $1 }
      | if Expr then Expr else Expr %prec IF { If $2 $4 $6 }
      | while '(' Expr ',' Expr ')' { While $3 $5 }
      | while '(' Expr ',' Expr ',' Expr ')' { WhileAcc $3 $5 $7 }
+     | memory '(' Expr ',' Expr ')' { WithMem $3 $5 }
      | CaseExpr { $1 }
      | MathExpr { $1 }
      | errorcode string { Error $2 }

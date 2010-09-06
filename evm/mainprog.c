@@ -16,6 +16,13 @@ VMState* vm;
 int main(int argc, char* argv[]) {
     void* stacktop = NULL;
     _epic_top_of_stack = (void**)&stacktop;
+    allocate = GC_malloc;
+    reallocate = GC_realloc;
+
+    pools = malloc(sizeof(pool_t*)*1024);
+    pool = malloc(sizeof(pool_t));
+    *pools = pool;
+    pool->block = NULL;
 
     GC_init();
     vm = init_evm();

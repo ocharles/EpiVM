@@ -121,6 +121,7 @@
 >       | TokenComma
 >       | TokenBar
 >       | TokenExtern
+>       | TokenMemory
 >       | TokenInclude
 >       | TokenEOF
 >  deriving (Show, Eq)
@@ -271,6 +272,7 @@
 >       ("effect",rest) -> cont TokenEffect rest
 >       ("strict",rest) -> cont TokenStrict rest
 >       ("while",rest) -> cont TokenWhile rest
+>       ("memory",rest) -> cont TokenMemory rest
 >       ("unused", rest) -> cont TokenUnused rest
 >       (thing,rest) -> lexError '%' rest
  

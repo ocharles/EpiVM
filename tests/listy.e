@@ -1,6 +1,6 @@
 include "Prelude.e"
 
-main () -> Unit = printList(take(3,ones))
+main () -> Unit = printList(%memory(10000, take(3,ones)))
 
 take (i:Int, x:Data) -> Data
   = if (i==0) then Con 0 () else
