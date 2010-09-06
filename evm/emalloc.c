@@ -9,10 +9,13 @@
 // Actually, should the root set be the addresses of the local variables? Then
 // when they are copied, they can be updated with the new location.
 
+extern ALLOCATOR allocate;
+extern REALLOCATOR reallocate;
+
 void* e_malloc(VMState* vm, size_t size) {
-    return (VAL)GC_malloc(size);
+    return (VAL)allocate(size);
 }
 
 void* e_realloc(VMState* vm, void* ptr, size_t size) {
-    return (VAL)GC_realloc(ptr, size);
+    return (VAL)reallocate(ptr, size);
 }

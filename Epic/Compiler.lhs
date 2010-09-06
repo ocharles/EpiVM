@@ -76,7 +76,7 @@ Chop off everything after the last / - get the directory a file is in
 >                 fp <- getDataFileName "evm/closure.h"
 >                 let libdir = trimLast fp
 >                 let dbg = if (elem Debug opts) then "-g" else "-O3"
->                 let cmd = "gcc -c " ++ dbg ++ " -foptimize-sibling-calls -x c " ++ tmpn ++ " -I" ++ libdir ++ " -o " ++ outf ++ " " ++ addGCC opts ++ doTrace opts
+>                 let cmd = "gcc -DUSE_BOEHM -c " ++ dbg ++ " -foptimize-sibling-calls -x c " ++ tmpn ++ " -I" ++ libdir ++ " -o " ++ outf ++ " " ++ addGCC opts ++ doTrace opts
 >                 -- putStrLn $ cmd
 >                 -- putStrLn $ fp
 >                 exit <- system cmd
@@ -120,7 +120,7 @@ Chop off everything after the last / - get the directory a file is in
 >     fp <- getDataFileName "evm/closure.h"
 >     let libdir = trimLast fp
 >     let dbg = if (elem Debug opts) then "-g" else "-O3"
->     let cmd = "gcc -x c " ++ dbg ++ " -foptimize-sibling-calls " ++ mainprog ++ " -x none -L" ++
+>     let cmd = "gcc -DUSE_BOEHM -x c " ++ dbg ++ " -foptimize-sibling-calls " ++ mainprog ++ " -x none -L" ++
 >               libdir++" -I"++libdir ++ " " ++
 >               (concat (map (++" ") infs)) ++ 
 >               " -levm -lgc -lpthread -lgmp -o "++outf

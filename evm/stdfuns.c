@@ -11,10 +11,13 @@ void putStr(char* s) { printf("%s",s); }
 void printBigInt(mpz_t x) { printf("%s\n",mpz_get_str(NULL,10,x)); }
 
 void epicGC() {
+#ifdef USE_BOEHM
     GC_gcollect();
+#endif
 }
 
 void epicMemInfo() {
+#ifdef USE_BOEHM
     GC_gcollect();
     int heap = GC_get_heap_size();
     int free = GC_get_free_bytes();
@@ -23,6 +26,7 @@ void epicMemInfo() {
     printf("Heap size %d\n", heap);
     printf("Heap used %d\n", heap-free);
     printf("Total allocations %d\n", total);
+#endif
 }
 
 int readInt() {
@@ -47,8 +51,11 @@ void* freadStr(void* h) {
     FILE* f = (FILE*)h;
     fgets(bufin,128,f);
     int len = strlen(bufin);
-
+#ifdef USE_BOEHM
     VAL c = GC_MALLOC_ATOMIC(sizeof(Closure)+len*sizeof(char)+sizeof(char)+1);
+#else
+    VAL c = EMALLOC(sizeof(Closure)+len*sizeof(char)+sizeof(char)+1);
+#endif   
     SETTY(c, STRING);
     c->info = ((void*)(c+1));
     char *buf = (char*)(c->info);
