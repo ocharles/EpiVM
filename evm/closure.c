@@ -105,25 +105,69 @@ void assertIntR(Closure* c)
 }
 
 void* pool_malloc(size_t size) {
+    if ((size & 7)!=0) {
+	size = 8 + ((size >> 3) << 3);
+    }
     *((size_t*)(pool->block_loc)) = size;
-    void* mem = (void*)(((size_t*)(pool->block_loc))+1);
-    pool->block_loc+=size+sizeof(size_t);
+    void* mem = (void*)(((size_t*)(pool->block_loc))+2);
+    pool->block_loc = pool->block_loc+size+sizeof(size_t)*2;
 
     return mem;
 }
 
 void* pool_realloc(void* ptr, size_t size) {
+    if ((size & 7)!=0) {
+	size = 8 + ((size >> 3) << 3);
+    }
     *((size_t*)(pool->block_loc)) = size;
-    void* mem = (void*)(((size_t*)(pool->block_loc))+1);
-    pool->block_loc+=size+sizeof(size_t);
+    void* mem = (void*)(((size_t*)(pool->block_loc))+2);
+    pool->block_loc = pool->block_loc+size+sizeof(size_t)*2;
 
-    size_t orig_size = *(((size_t*)ptr)-1);
+    size_t orig_size = *(((size_t*)ptr)-2);
     memcpy(mem, ptr, orig_size);
 
     return mem;
 }
 
-VAL copyFun(fun* f, pool_t* pool) {
+void* pool_grow_malloc(size_t size) {
+    // TODO: if we're out of space, make a new pool, with a pointer to
+    // the old pool so we can free it when we're ready.
+
+    if ((size & 7)!=0) {
+	size = 8 + ((size >> 3) << 3);
+    }
+    *((size_t*)(pool->block_loc)) = size;
+    void* mem = (void*)(((size_t*)(pool->block_loc))+2);
+    pool->block_loc = pool->block_loc+size+sizeof(size_t)*2;
+
+    return mem;
+}
+
+void* pool_grow_realloc(void* ptr, size_t size) {
+    if ((size & 7)!=0) {
+	size = 8 + ((size >> 3) << 3);
+    }
+    *((size_t*)(pool->block_loc)) = size;
+    void* mem = (void*)(((size_t*)(pool->block_loc))+2);
+    pool->block_loc = pool->block_loc+size+sizeof(size_t)*2;
+
+    size_t orig_size = *(((size_t*)ptr)-2);
+    memcpy(mem, ptr, orig_size);
+
+    return mem;
+}
+
+void freePool(pool_t* pool)
+{
+    free(pool->block);
+    if (pool->grow!=NULL) {
+	freePool((pool_t*)(pool->grow));
+    }
+    free(pool);
+}
+
+
+VAL copyFun(fun* f, pool_t* oldpool) {
     VAL c = EMALLOC(sizeof(Closure)+sizeof(fun));
     fun* fn = (fun*)(c+1);
     fn->fn = f->fn;
@@ -135,7 +179,7 @@ VAL copyFun(fun* f, pool_t* pool) {
     void** a;
 
     for(a = f->args; a < f->arg_end; ++a, ++p) {
-	*p = copy((VAL)(*a), pool);
+	*p = copy((VAL)(*a), oldpool);
     }
     
     SETTY(c, FUN);
@@ -144,7 +188,7 @@ VAL copyFun(fun* f, pool_t* pool) {
     return c;
 }
 
-VAL copyThunk(thunk* t, pool_t* pool) {
+VAL copyThunk(thunk* t, pool_t* oldpool) {
     VAL c = EMALLOC(sizeof(Closure)+sizeof(fun));
     thunk* fn = (thunk*)(c+1);
     
@@ -157,7 +201,7 @@ VAL copyThunk(thunk* t, pool_t* pool) {
     int i;
 
     for(i=0; i < t->numargs; ++i, ++a, ++p) {
-	*p = copy((VAL)(*a), pool);
+	*p = copy((VAL)(*a), oldpool);
     }
 
     SETTY(c,THUNK);
@@ -166,12 +210,12 @@ VAL copyThunk(thunk* t, pool_t* pool) {
     return c;
 }
 
-VAL copyCon(con* c, pool_t* pool) {
+VAL copyCon(con* c, pool_t* oldpool) {
+    int arity = c->tag >> 16;
+//    printf("COPY CON %d %d\n", c->tag & 65535, arity);
+
     VAL nc = EMALLOC(sizeof(Closure)+sizeof(con));
     con* cn = (con*)(nc+1);
-    int arity = c->tag >> 16;
-
-//    printf("COPY CON %d %d\n", c->tag & 65535, arity);
 
     cn->tag = c->tag;
     cn->args = MKARGS(arity);
@@ -182,7 +226,7 @@ VAL copyCon(con* c, pool_t* pool) {
 
     for(i=0; i<arity; ++i, ++a, ++p) {
 //	printf("COPY ARG %d\n", *a);
-	*p = copy((VAL)(*a), pool);
+	*p = copy((VAL)(*a), oldpool);
     }
 
     SETTY(nc, CON);
@@ -195,16 +239,18 @@ VAL copyCon(con* c, pool_t* pool) {
 // TODO: Preserve sharing. But this function isn't really intended for that
 // sort of thing.
 
-VAL copy(VAL x, pool_t* pool) {
+VAL copy(VAL x, pool_t* oldpool) {
     // only copy things that were allocated in the given pool.
-    if (x>=(VAL)(pool->block) && x<(VAL)(pool->block_end)) {
+    // TODO: also need to check whether it was allocated in pool->grow
+
+    if (x>=(VAL)(oldpool->block) && x<(VAL)(oldpool->block_end)) {
 	switch(GETTY(x)) {
 	case FUN:
-	    return copyFun((fun*)x->info, pool);
+	    return copyFun((fun*)x->info, oldpool);
 	case THUNK:
-	    return copyThunk((thunk*)x->info, pool);
+	    return copyThunk((thunk*)x->info, oldpool);
 	case CON:
-	    return copyCon((con*)x->info, pool);
+	    return copyCon((con*)x->info, oldpool);
 	case INT:
 	    return x;
 	case BIGINT:

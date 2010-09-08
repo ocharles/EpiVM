@@ -52,7 +52,7 @@ at this stage.
 >               -- code using that pool for allocation, then copies the 
 >               -- result (1st TmpVar) into the previously active pool and 
 >               -- deallocates the used pool.
->             | MEMORY TmpVar TmpVar Bytecode 
+>             | MEMORY Allocator TmpVar TmpVar Bytecode 
 >             | BREAKFALSE TmpVar
 >             | JFALSE TmpVar Int
 >             | JUMP Int
@@ -184,11 +184,11 @@ place.
 >            tcode <- ecomp lazy tcall t reg vs
 >            ecode <- ecomp lazy tcall e reg vs
 >            return $ acode ++ [EVAL areg (snd lazy), IF areg tcode ecode]
->     ecomp lazy tcall (WithMem e val) reg vs =
+>     ecomp lazy tcall (WithMem a e val) reg vs =
 >         do ereg <- new_tmp
 >            ecode <- ecomp lazy Middle e ereg vs
 >            valcode <- ecomp lazy Middle val reg vs
->            return $ ecode ++ [EVAL ereg (snd lazy), MEMORY reg ereg valcode]
+>            return $ ecode ++ [EVAL ereg (snd lazy), MEMORY a reg ereg valcode]
 >     ecomp lazy tcall (While t b) reg vs =
 >         do savetmp <- get_tmp
 >            start <- new_label

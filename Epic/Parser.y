@@ -50,6 +50,8 @@ import Epic.Lexer
       else            { TokenElse }
       while           { TokenWhile }
       memory          { TokenMemory }
+      fixed           { TokenFixed }
+      growable        { TokenGrowable }
       unused          { TokenUnused }
       in              { TokenIn }
       lazy            { TokenLazy }
@@ -179,7 +181,7 @@ Expr : name { R $1 }
      | if Expr then Expr else Expr %prec IF { If $2 $4 $6 }
      | while '(' Expr ',' Expr ')' { While $3 $5 }
      | while '(' Expr ',' Expr ',' Expr ')' { WhileAcc $3 $5 $7 }
-     | memory '(' Expr ',' Expr ')' { WithMem $3 $5 }
+     | memory '(' Allocator ',' Expr ',' Expr ')' { WithMem $3 $5 $7 }
      | CaseExpr { $1 }
      | MathExpr { $1 }
      | errorcode string { Error $2 }
@@ -188,6 +190,10 @@ Expr : name { R $1 }
           { ForeignCall $2 $3 $5 }
      | lazy foreign Type string '(' ExprTypeList ')' 
           { LazyForeignCall $3 $4 $6 }
+
+Allocator :: { Allocator }
+Allocator : fixed { FixedPool }
+          | growable { GrowablePool }
 
 CaseExpr :: { Expr }
 CaseExpr : case Expr of '{' Alts '}' { Case $2 $5 }

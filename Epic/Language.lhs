@@ -102,7 +102,7 @@ Get the arity of a definition in the context
 >           | Let Name Type Expr Expr -- Let binding
 >           | Error String -- Exit with error message
 >           | Impossible -- Claimed impossible to reach code
->           | WithMem Expr Expr -- evaluate with manual allocation
+>           | WithMem Allocator Expr Expr -- evaluate with manual allocation
 >           | ForeignCall Type String [(Expr, Type)] -- Foreign function call
 >           | LazyForeignCall Type String [(Expr, Type)] -- Foreign function call
 >   deriving Eq
@@ -121,6 +121,9 @@ Get the arity of a definition in the context
 >    compare (Alt _ _ _) (DefaultCase _) = LT
 >    compare (DefaultCase _) (Alt _ _ _) = GT
 >    compare _ _ = EQ
+
+> data Allocator = FixedPool | GrowablePool
+>   deriving Eq
 
 > data Op = Plus | Minus | Times | Divide | OpEQ | OpLT | OpLE | OpGT | OpGE
 >         | FPlus | FMinus | FTimes | FDivide
@@ -152,11 +155,15 @@ Get the arity of a definition in the context
 >                          show v ++ " in " ++ show e
 >     show (Error e) = "error(" ++ show e ++ ")"
 >     show Impossible = "Impossible"
->     show (WithMem m e) = "%memory(" ++ show m ++ ", " ++ show e ++ ")"
+>     show (WithMem a m e) = "%memory(" ++ show a ++ "," ++ show m ++ ", " ++ show e ++ ")"
 >     show (ForeignCall t s as) = "foreign " ++ show t ++ " " ++
 >                                 show s ++ show as
 >     show (LazyForeignCall t s as) = "lazy foreign " ++ show t ++ " " ++
 >                                     show s ++ show as
+
+> instance Show Allocator where
+>     show FixedPool = "%fixed"
+>     show GrowablePool = "%growable"
                              
 Supercombinator definitions
 

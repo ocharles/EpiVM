@@ -122,6 +122,8 @@
 >       | TokenBar
 >       | TokenExtern
 >       | TokenMemory
+>       | TokenFixed
+>       | TokenGrowable
 >       | TokenInclude
 >       | TokenEOF
 >  deriving (Show, Eq)
@@ -273,6 +275,8 @@
 >       ("strict",rest) -> cont TokenStrict rest
 >       ("while",rest) -> cont TokenWhile rest
 >       ("memory",rest) -> cont TokenMemory rest
+>       ("fixed",rest) -> cont TokenFixed rest
+>       ("growable",rest) -> cont TokenGrowable rest
 >       ("unused", rest) -> cont TokenUnused rest
 >       (thing,rest) -> lexError '%' rest
  

@@ -13,9 +13,12 @@ typedef void*(*ALLOCATOR)(size_t);
 typedef void*(*REALLOCATOR)(void*,size_t);
 
 typedef struct {
-    void* block;
-    void* block_loc;
-    void* block_end;
+    char* block;
+    char* block_loc;
+    char* block_end;
+    ALLOCATOR allocate;
+    REALLOCATOR reallocate;
+    void* grow;
 } pool_t;
 
 extern ALLOCATOR allocate;
@@ -23,25 +26,36 @@ extern REALLOCATOR reallocate;
 extern pool_t** pools;
 extern pool_t* pool;
 
-#define EMALLOC(x) allocate(x)
+#define EMALLOC(x) pool->allocate(x)
 #define EREADY(x) 
-#define EREALLOC(ptr,x) reallocate(ptr,x)
+#define EREALLOC(ptr,x) pool->reallocate(ptr,x)
 #define EFREE(x)
 
-#define NEWPOOL(x) \
+// Add a new memory pool to the pool stack, using the fixed size pool
+// allocator
+#define NEWFIXEDPOOL(x) \
     pool=malloc(sizeof(pool_t)); pools++; *pools = pool;		\
-    allocate=pool_malloc;						\
-    reallocate=pool_realloc;						\
+    pool->allocate=pool_malloc;						\
+    pool->reallocate=pool_realloc;					\
+    pool->block = malloc(GETINT(x));					\
+    pool->block_loc = pool->block;					\
+    pool->block_end = pool->block+GETINT(x);				\
+    pool->grow = NULL;
+// Add a new memory pool to the pool stack, using the fixed size pool
+// allocator
+#define NEWGROWABLEPOOL(x) \
+    pool=malloc(sizeof(pool_t)); pools++; *pools = pool;		\
+    pool->allocate=pool_grow_malloc;					\
+    pool->reallocate=pool_grow_realloc;					\
     pool->block = malloc(GETINT(x));					\
     pool->block_loc = pool->block;					\
     pool->block_end = pool->block+GETINT(x);
+// Go back to the previous pool, copying the value x into it
 #define CLEARPOOL(x)							\
     pools--;								\
     pool = *pools;							\
-    if (pool->block==NULL) { allocate = GC_malloc; reallocate = GC_realloc; } \
     x=copy(x, *(pools+1));						\
-    free((*(pools+1))->block);						\
-    free(*(pools+1));							\
+    freePool(*(pools+1));
 
 typedef intptr_t eint;
 
@@ -142,8 +156,12 @@ extern void* e_realloc(VMState* vm, void* ptr, size_t size);
 // Allocate from a non-GCed region
 void* pool_malloc(size_t size);
 void* pool_realloc(void* ptr, size_t size);
+void* pool_grow_malloc(size_t size);
+void* pool_grow_realloc(void* ptr, size_t size);
 // Copy value from the given pool into the currently active region
 VAL copy(VAL x, pool_t* pool);
+
+void freePool(pool_t* pool);
 
 #define INIT_HEAP_SIZE 1000000
 

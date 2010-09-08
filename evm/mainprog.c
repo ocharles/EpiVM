@@ -17,6 +17,8 @@ int main(int argc, char* argv[]) {
     pool = malloc(sizeof(pool_t));
     *pools = pool;
     pool->block = NULL;
+    pool->allocate = GC_malloc;
+    pool->reallocate = GC_realloc;
 
     GC_init();
     vm = init_evm();
