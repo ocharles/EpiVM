@@ -1,7 +1,7 @@
 #ifndef _CLOSURE_H
 #define _CLOSURE_H
 
-#include <gc_header.h>
+#include "gc_header.h"
 
 //#include <emalloc.h>
 #include <gmp.h>
