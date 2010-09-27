@@ -19,7 +19,7 @@ Description:    Epic is a simple functional language which compiles to
 Data-files:    evm/libevm.a evm/closure.h evm/stdfuns.h evm/stdfuns.c evm/mainprog.c evm/emalloc.h evm/gc_header.h
 Extra-source-files: evm/closure.c evm/closure.h evm/stdfuns.h evm/mainprog.c evm/stdfuns.c evm/Makefile evm/emalloc.c evm/emalloc.h evm/gc_header.h
 
-Cabal-Version:  >= 1.2.3
+Cabal-Version:  >= 1.8.0.4
 Build-type:     Custom
 
 Library
@@ -32,8 +32,7 @@ Library
 
 Executable     epic
                Main-is: Main.lhs
-               Other-modules: Epic.Bytecode Epic.Parser Epic.Scopecheck
-                              Epic.Language Epic.Lexer Epic.CodegenC
-                              Epic.OTTLang Epic.Simplify Paths_epic
-               Build-depends:	base >=4 && <5, haskell98, mtl, Cabal, array, directory
+               hs-source-dirs: main
+               Other-modules: Paths_epic
+               Build-depends: base >=4 && <5, haskell98, Cabal, directory, epic
 
