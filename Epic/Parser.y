@@ -38,6 +38,7 @@ import Epic.Lexer
       unittype        { TokenUnitType }
       funtype         { TokenFunType }
       datatype        { TokenDataType }
+      tyctype         { TokenTyCType }
       anytype         { TokenAnyType }
       unit            { TokenUnit }
       con             { TokenCon }
@@ -140,6 +141,7 @@ Type : inttype { TyInt }
      | unittype { TyUnit }
      | anytype { TyAny }
      | datatype { TyData }
+     | tyctype string { TyCType $2 }
      | funtype { TyFun }
 
 Declaration :: { Decl }
@@ -148,6 +150,7 @@ Declaration: Export Flags name '(' TypeList ')' arrow Type '=' Expr
            | extern name '(' TypeList ')' arrow Type
                { mkExtern $2 (map snd $4) $7 (map fst $4) }
            | cinclude string { Include $2 }
+           | ctype string { CType $2 }
 
 Flags :: { [CGFlag] }
 Flags : { [] }

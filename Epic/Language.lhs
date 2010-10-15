@@ -26,6 +26,7 @@ Raw data types. Int, Char, Bool are unboxed.
 >           | TyUnit
 >           | TyAny -- unchecked, polymorphic
 >           | TyData -- generic data type
+>           | TyCType String -- Exported, C typedef
 >           | TyFun -- any function
 >   deriving Eq
 
@@ -41,6 +42,7 @@ Raw data types. Int, Char, Bool are unboxed.
 >     show TyUnit = "Unit"
 >     show TyAny = "Any"
 >     show TyData = "Data"
+>     show (TyCType s) = "CType " ++ s
 >     show TyFun = "Fun"
 
 > data Const = MkInt Int
@@ -186,7 +188,7 @@ Programs
 >                      fargs :: [Type] }
 >           | Include String
 >           | Link String
->           | CType Name
+>           | CType String
 >   deriving Show
 
 > data CGFlag = Inline | Strict

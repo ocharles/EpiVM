@@ -65,6 +65,7 @@
 >     quickcall fname ++ "(" ++
 >     wrapperArgs (length args) ++ ");\n}\n\n" ++
 >     wrappers xs
+> wrappers (decl@(CType n):xs) = exportC decl
 > wrappers (_:xs) = wrappers xs
 
 > wrapperArgs 0 = ""
@@ -329,6 +330,7 @@ Write out code for an export
 > cty TyBool = "int"
 > cty TyString = "char*"
 > cty TyUnit = "void"
+> cty (TyCType n) = n
 > cty _ = "void*"
 
 > ctys [] = ""
@@ -345,6 +347,7 @@ Write out code for an export
 >         ";\n\n" ++
 >     "}"
 >   where conv (nm, ty) = cToEpic (showuser nm) ty
+> exportC (CType n) = "typedef void* " ++ n ++ ";\n"
 > exportC _ = ""
 
 ... and in the header file
@@ -352,4 +355,6 @@ Write out code for an export
 > exportH :: Decl -> String
 > exportH (Decl nm rt (Bind args _ _ _) (Just cname) _) =
 >     cty rt ++ " " ++ cname ++ "(" ++ ctys args ++ ");\n"
+> exportH (CType n) = "typedef void* " ++ n ++ ";\n"
 > exportH _ = ""
+

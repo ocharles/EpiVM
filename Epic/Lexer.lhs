@@ -63,6 +63,7 @@
 >       | TokenUnitType
 >       | TokenAnyType
 >       | TokenDataType
+>       | TokenTyCType
 >       | TokenFunType
 >       | TokenForeign
 >       | TokenCInclude
@@ -240,6 +241,7 @@
 >       ("Ptr",rest) -> cont TokenPtrType rest
 >       ("Unit",rest) -> cont TokenUnitType rest
 >       ("Data",rest) -> cont TokenDataType rest
+>       ("CType",rest) -> cont TokenTyCType rest
 >       ("Fun",rest) -> cont TokenFunType rest
 >       ("Any",rest) -> cont TokenAnyType rest
 > -- values

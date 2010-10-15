@@ -961,6 +961,16 @@ void* MKFREE(int x)
 
 VMState* init_evm()
 {
+    allocate = GC_malloc;
+    reallocate = GC_realloc;
+
+    pools = malloc(sizeof(pool_t*)*1024);
+    pool = malloc(sizeof(pool_t));
+    *pools = pool;
+    pool->block = NULL;
+    pool->allocate = GC_malloc;
+    pool->reallocate = GC_realloc;
+
     int i;
     one = MKINT(1);
     zcon = EMALLOC(sizeof(Closure)*255);
