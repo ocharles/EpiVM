@@ -387,3 +387,15 @@ void fileClose(void* h) {
 int isNull(void* ptr) {
     return ptr==NULL;
 }
+
+// Command line arguments
+
+int epic_numArgs()
+{
+    return evm_numArgs();
+}
+
+char* epic_getArg(int i)
+{
+    return GETSTR(evm_getArg(i));
+}

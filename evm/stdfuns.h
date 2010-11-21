@@ -36,6 +36,9 @@ void fputStr(void* h, char* str);
 
 int isNull(void* ptr);
 
+int epic_numArgs();
+char* epic_getArg(int i);
+
 // IORefs
 int newRef();
 void* readRef(int r);

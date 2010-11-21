@@ -12,7 +12,7 @@ int main(int argc, char* argv[]) {
     _epic_top_of_stack = (void**)&stacktop;
 
     GC_init();
-    vm = init_evm();
+    vm = init_evm(argc, argv);
 
 //    GC_use_entire_heap = 1;
 //    GC_free_space_divisor = 2;

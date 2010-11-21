@@ -276,8 +276,11 @@ void* MKFREE(int x);
 // Exit with fatal error
 void ERROR(char* msg);
 
+VAL evm_getArg(int i);
+int evm_numArgs();
+
 // Initialise everything
-VMState* init_evm();
+VMState* init_evm(int argc, char* argv[]);
 void close_evm(VMState* vm);
 
 void* FASTMALLOC(int size);

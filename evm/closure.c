@@ -9,6 +9,8 @@
 
 VAL one;
 VAL* zcon;
+int v_argc;
+VAL* v_argv;
 
 ALLOCATOR allocate;
 REALLOCATOR reallocate;
@@ -959,7 +961,18 @@ void* MKFREE(int x)
     return c;
 }
 
-VMState* init_evm()
+VAL evm_getArg(int i) {
+    if (i>=0 && i<v_argc) 
+	return v_argv[i];
+    else
+	return MKSTR("");
+}
+
+int evm_numArgs() {
+    return v_argc;
+}
+
+VMState* init_evm(int argc, char* argv[])
 {
     allocate = GC_malloc;
     reallocate = GC_realloc;
@@ -978,6 +991,14 @@ VMState* init_evm()
 	zcon[i] = CONSTRUCTORn(i,0,0);
     }
     EREADY(zcon);
+
+    v_argc = argc;
+    v_argv = EMALLOC(sizeof(Closure)*v_argc);
+
+    for(i=0;i<=argc;++i) {
+	v_argv[i] = MKSTR(argv[i]);
+    }
+    EREADY(v_argv);
 
 /*
     VMState* vm = malloc(sizeof(VMState));
