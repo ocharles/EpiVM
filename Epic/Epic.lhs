@@ -28,6 +28,9 @@ are top level functions.
 >                 (Bind vars l e' flags) <- expr (f (R arg))
 >                 return (Bind ((arg, TyAny):vars) l e' flags)
 
+> instance Epic ([Name], Expr) where
+>     expr (ns, e) = return (Bind (map (\x -> (x, TyAny)) ns) 0 e [])
+
 Use arithmetic operators for expressions
 
 > instance Num Expr where
@@ -82,7 +85,10 @@ case alternatives
 >                    put (var+1)
 >                    let arg = MN "alt" var
 >                    (Alt t vars e') <- mkAlt t (f (R arg))
->                    return (Alt t ((arg, TyAny):vars) e')
+>                    return $ Alt t ((arg, TyAny):vars) e'
+
+> instance Alternative ([Name], Expr) where
+>     mkAlt t (vars, e) = return $ Alt t (map (\x -> (x, TyAny)) vars) e
 
 > con :: Alternative e => Int -> e -> CaseAlt
 > con t e = evalState (mkAlt t e) 0
@@ -170,7 +176,15 @@ Remaining expression constructs
 
 > compile :: Program -> FilePath -> IO ()
 > compile tms outf = do compileDecls (outf++".o") Nothing (map mkDecl tms) []
->                       link [outf++".o"] [] outf True []
+>                       Epic.Compiler.link [outf++".o"] [] outf True []
+
+> -- |Compile a program to a .o
+> compileObj :: Program -> FilePath -> IO ()
+> compileObj tms outf = compileDecls outf Nothing (map mkDecl tms) []
+
+> -- |Link a collection of object files
+> link :: [FilePath] -> FilePath -> IO ()
+> link fs outf = Epic.Compiler.link fs [] outf True []
 
 > run :: Program -> IO ()
 > run tms = do (tmpn, tmph) <- tempfile
