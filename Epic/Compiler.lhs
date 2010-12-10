@@ -157,14 +157,3 @@ Grr.)
  libdir :: FilePath
  libdir = libprefix ++ "/lib/evm"
 
-> tempfile :: IO (FilePath, Handle)
-> tempfile = do env <- environment "TMPDIR"
->               let dir = case env of
->                               Nothing -> "/tmp"
->                               (Just d) -> d
->               openTempFile dir "esc"
-
-> environment :: String -> IO (Maybe String)
-> environment x = catch (do e <- getEnv x
->                           return (Just e))
->                       (\_ -> return Nothing)

@@ -6,6 +6,9 @@
 Combinators for constructing an expression
 
 > import Control.Monad.State
+> import System
+> import System.IO
+
 > import Epic.Language
 > import Epic.Compiler
 
@@ -26,8 +29,6 @@ are top level functions.
 >                 return (Bind ((arg, TyAny):vars) l e' flags)
 
 Use arithmetic operators for expressions
-[FIXME: we're going to have to do something cleverer for Eq. Maybe wrap
-Expr in another type.]
 
 > instance Num Expr where
 >     (+) = Op Plus
@@ -38,28 +39,17 @@ Expr in another type.]
 >     signum = undefined
 >     fromInteger x = Const (MkInt (fromInteger x))
 
+> instance Fractional Expr where
+>     (/) = Op Divide
+>     fromRational x = Const (MkFloat (fromRational x))
+
+Binary operators
+
 > eq = Op OpEQ
 > lt = Op OpLT
 > lte = Op OpLE
 > gt = Op OpGT
 > gte = Op OpGE
-
-> instance Fractional Expr where
->     (/) = Op Divide
->     fromRational x = Const (MkFloat (fromRational x))
-
-> class Alternative e where
->     mkAlt :: Tag -> e -> State Int CaseAlt
-
-> instance Alternative Expr where
->     mkAlt t e = return (Alt t [] e)
-
-> instance (Alternative e) => Alternative (Expr -> e) where
->     mkAlt t f = do var <- get
->                    put (var+1)
->                    let arg = MN "alt" var
->                    (Alt t vars e') <- mkAlt t (f (R arg))
->                    return (Alt t ((arg, TyAny):vars) e')
 
 > mkFunc :: Epic e => e -> Func
 > mkFunc e = evalState (expr e) 0
@@ -81,6 +71,19 @@ case alternatives
 > instance (Cases c) => Cases [c] where
 >     alt cs = concatMap alt cs
 
+> class Alternative e where
+>     mkAlt :: Tag -> e -> State Int CaseAlt
+
+> instance Alternative Expr where
+>     mkAlt t e = return (Alt t [] e)
+
+> instance (Alternative e) => Alternative (Expr -> e) where
+>     mkAlt t f = do var <- get
+>                    put (var+1)
+>                    let arg = MN "alt" var
+>                    (Alt t vars e') <- mkAlt t (f (R arg))
+>                    return (Alt t ((arg, TyAny):vars) e')
+
 > con :: Alternative e => Int -> e -> CaseAlt
 > con t e = evalState (mkAlt t e) 0
 
@@ -95,7 +98,7 @@ Remaining expression constructs
 > case_ = Case
 > apply_ = App
 > error_ = Error
-> var x = R (UN x)
+> var x = R (UN x) -- global names, local names are lambda bound
 > mkCon = Con
 > op_ = Op
 > foreign_ = ForeignCall
@@ -144,6 +147,7 @@ Remaining expression constructs
 > infixl 5 !., <$>
 
 > (!.) = Proj
+
 > (<$>) nm args = apply_ (R (UN nm)) args
 
 > data EpicTm = forall e. Epic e => Epic e
@@ -167,3 +171,11 @@ Remaining expression constructs
 > compile :: Program -> FilePath -> IO ()
 > compile tms outf = do compileDecls (outf++".o") Nothing (map mkDecl tms) []
 >                       link [outf++".o"] [] outf True []
+
+> run :: Program -> IO ()
+> run tms = do (tmpn, tmph) <- tempfile
+>              hClose tmph
+>              Epic.Epic.compile tms tmpn
+>              system tmpn
+>              return ()
+

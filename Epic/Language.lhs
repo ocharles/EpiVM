@@ -1,6 +1,10 @@
 > module Epic.Language where
 
 > import Control.Monad
+> import System
+> import System.IO
+> import System.Directory
+> import System.Environment
 
 > -- | (Debugging) options to give to compiler
 > data CompileOptions = KeepC -- ^ Keep intermediate C file
@@ -228,6 +232,19 @@ Programs
 > checkLevel (Checking i:_) = i
 > checkLevel (_:xs) = checkLevel xs
 
+Temp files for compiler output
+
+> tempfile :: IO (FilePath, Handle)
+> tempfile = do env <- environment "TMPDIR"
+>               let dir = case env of
+>                               Nothing -> "/tmp"
+>                               (Just d) -> d
+>               openTempFile dir "esc"
+
+> environment :: String -> IO (Maybe String)
+> environment x = catch (do e <- getEnv x
+>                           return (Just e))
+>                       (\_ -> return Nothing)
 
 Some tests
 
