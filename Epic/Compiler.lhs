@@ -11,7 +11,8 @@
 
 > module Epic.Compiler(CompileOptions(..),
 >                      compile, 
->                      compileOpts, 
+>                      compileOpts,
+>                      compileDecls,
 >                      link) where
 
 Brings everything together; parsing, checking, code generation
@@ -68,36 +69,44 @@ Chop off everything after the last / - get the directory a file is in
 >          case s of
 >              Failure err _ _ -> fail err
 >              Success ds -> do
->                 (tmpn,tmph) <- tempfile
->                 let hdr = outputHeader opts
->                 scchecked <- checkAll opts ds
->                 let simplified = simplifyAll scchecked
->                 checked <- compileDecls simplified tmph hdr
->                 fp <- getDataFileName "evm/closure.h"
->                 let libdir = trimLast fp
->                 let dbg = if (elem Debug opts) then "-g" else "-O3"
->                 let cmd = "gcc -DUSE_BOEHM -c " ++ dbg ++ " -foptimize-sibling-calls -x c " ++ tmpn ++ " -I" ++ libdir ++ " -o " ++ outf ++ " " ++ addGCC opts ++ doTrace opts
->                 -- putStrLn $ cmd
->                 -- putStrLn $ fp
->                 exit <- system cmd
->                 if (elem KeepC opts)
->                    then do system $ "cp " ++ tmpn ++ " " ++ 
->                                       (getRoot fn) ++ ".c"
->                            return ()
->                    else return ()
->                 -- removeFile tmpn
->                 if (exit /= ExitSuccess) 
->                    then fail $ "gcc failed"
->                    else return ()
->                 case iface of
->                    Nothing -> return ()
->                    (Just fn) -> do writeFile fn (writeIFace checked)
+>                 compileDecls outf iface ds opts
+
+> compileDecls :: FilePath -- ^ Output file name
+>              -> Maybe FilePath -- ^ Interface (.ei) file name, if desired
+>              -> [Decl] -- ^ Declarations
+>              -> [CompileOptions]
+>              -> IO ()
+> compileDecls outf iface ds opts
+>     = do (tmpn,tmph) <- tempfile
+>          let hdr = outputHeader opts
+>          scchecked <- checkAll opts ds
+>          let simplified = simplifyAll scchecked
+>          checked <- docompileDecls simplified tmph hdr
+>          fp <- getDataFileName "evm/closure.h"
+>          let libdir = trimLast fp
+>          let dbg = if (elem Debug opts) then "-g" else "-O3"
+>          let cmd = "gcc -DUSE_BOEHM -c " ++ dbg ++ " -foptimize-sibling-calls -x c " ++ tmpn ++ " -I" ++ libdir ++ " -o " ++ outf ++ " " ++ addGCC opts ++ doTrace opts
+>          -- putStrLn $ cmd
+>          -- putStrLn $ fp
+>          exit <- system cmd
+>          if (elem KeepC opts)
+>             then do system $ "cp " ++ tmpn ++ " " ++ 
+>                                (getRoot outf) ++ ".c"
+>                     return ()
+>             else return ()
+>          -- removeFile tmpn
+>          if (exit /= ExitSuccess) 
+>             then fail $ "gcc failed"
+>             else return ()
+>          case iface of
+>             Nothing -> return ()
+>             (Just fn) -> do writeFile fn (writeIFace checked)
 
 > getRoot fn = case span (/='.') fn of
 >     (stem,_) -> stem
 
 
-> compileDecls (ctxt, decls) outh hdr
+> docompileDecls (ctxt, decls) outh hdr
 >     = do hPutStr outh $ codegenC ctxt decls
 >          case hdr of
 >              Just fpath ->

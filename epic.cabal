@@ -1,5 +1,5 @@
 Name:		epic
-Version:	0.1.7
+Version:	0.1.8
 Author:		Edwin Brady
 License:	BSD3
 License-file:	LICENSE
@@ -23,7 +23,7 @@ Cabal-Version:  >= 1.8.0.4
 Build-type:     Custom
 
 Library
-        Exposed-modules: Epic.Compiler
+        Exposed-modules: Epic.Compiler Epic.Epic
         Other-modules: Epic.Bytecode Epic.Parser Epic.Scopecheck
                        Epic.Language Epic.Lexer Epic.CodegenC
                        Epic.OTTLang Epic.Simplify Paths_epic
