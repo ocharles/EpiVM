@@ -1,7 +1,32 @@
 > {-# OPTIONS_GHC -fglasgow-exts #-}
 
-> module Epic.Epic(module Epic.Epic, 
->                  Expr, Op(..)) where
+> -- |
+> -- Module      : Epic.Epic
+> -- Copyright   : Edwin Brady
+> -- Licence     : BSD-style (see LICENSE in the distribution)
+> --
+> -- Maintainer  : eb@dcs.st-and.ac.uk
+> -- Stability   : experimental
+> -- Portability : non-portable
+> --
+> -- Combinators for builing Epic programs
+
+> module Epic.Epic(-- * Expressions
+>                  EpicExpr, EpicFn, Alternative,
+>                  Expr, Term, Name, name,
+>                  (@@), case_, con_, con, 
+>                  if_, while_, whileAcc_, error_, op_,
+>                  lazy_, foreign_, foreignL_, let_, letN_, Op(..),
+>                  str, int, float, char, (!.), fn, (+>),
+>                  -- * Types
+>                  tyInt, tyChar, tyBool, tyFloat, tyString,
+>                  tyPtr, tyUnit, tyAny, tyC,
+>                  -- * Declarations and programs
+>                  EpicDecl(..), Program, 
+>                  -- * Compiling and execution
+>                  Epic.Epic.compile, compileObj, Epic.Epic.link, run,
+>                  -- * Some basic definitions
+>                  basic_defs) where
 
 Combinators for constructing an expression
 
@@ -14,16 +39,18 @@ Combinators for constructing an expression
 
 Allow Haskell functions to be used to build expressions.
 
+> -- | A sub-term, with a name supply
+> type Term = State Int Expr
+
+> -- | Build expressions, with a name supply
 > class EpicExpr e where
 >     expr :: e -> State Int Expr
 
 > instance EpicExpr Expr where
 >     expr e = return e
 
-> instance EpicExpr (State Int Expr) where
+> instance EpicExpr Term where
 >     expr e = e
-
-> type Term = State Int Expr
 
 > instance (EpicExpr e) => EpicExpr (Expr -> e) where
 >     expr f = do var <- get
@@ -38,6 +65,7 @@ Allow Haskell functions to be used to build expressions.
 >         lam (n:ns) e = do e' <- lam ns e
 >                           return (Lam n TyAny e')
 
+> -- | Build a function definition, with a name supply
 > class EpicFn e where
 >     func :: e -> State Int Func
 
@@ -57,21 +85,6 @@ Allow Haskell functions to be used to build expressions.
 
 > instance EpicFn ([Name], Expr) where
 >     func (ns, e) = return (Bind (map (\x -> (x, TyAny)) ns) 0 e [])
-
-Use arithmetic operators for expressions
-
-> instance Num Expr where
->     (+) = Op Plus
->     (-) = Op Minus
->     (*) = Op Times
->     negate x = Const (MkInt 0) - x
->     abs = undefined
->     signum = undefined
->     fromInteger x = Const (MkInt (fromInteger x))
-
-> instance Fractional Expr where
->     (/) = Op Divide
->     fromRational x = Const (MkFloat (fromRational x))
 
 Binary operators
 
@@ -101,6 +114,7 @@ case alternatives
 > instance (Cases c) => Cases [c] where
 >     alt cs = concatMap alt cs
 
+> -- | Build a case alternative, with a name supply
 > class Alternative e where
 >     mkAlt :: Tag -> e -> State Int CaseAlt
 
@@ -121,11 +135,23 @@ case alternatives
 > instance Alternative ([Name], Expr) where
 >     mkAlt t (vars, e) = return $ Alt t (map (\x -> (x, TyAny)) vars) e
 
-> con :: Alternative e => Int -> e -> State Int CaseAlt
+> -- | Case alternative for constructor with the given tag
+> con :: Alternative e => Int -- ^ the tag
+>                         -> e -- ^ RHS of alternative
+>                         -> State Int CaseAlt
 > con t e = mkAlt t e
 
-> const = ConstAlt
-> defaultcase = DefaultCase
+> -- | Case alternative for a constant
+> const :: EpicExpr a => Int -- ^ the constant
+>                        -> a -> State Int CaseAlt
+> const t a = do a' <- expr a
+>                return (ConstAlt t a')
+
+> -- | Default case if no other branches apply
+> defaultcase :: EpicExpr a => a -> State Int CaseAlt
+> defaultcase a = do a' <- expr a
+>                    return (DefaultCase a')
+
 
 Remaining expression constructs
 
@@ -148,12 +174,19 @@ Remaining expression constructs
 >        a -> t -> e -> Term
 > if_ = exp3 If
 
+> -- | While loops (primitive, for efficiency).
 > while_ :: (EpicExpr t, EpicExpr b) =>
->           t -> b -> Term
+>           t -- ^ Boolean test (most likely effectful)
+>           -> b -- ^ Body
+>           -> Term
 > while_ = exp2 While
 
-> whileAcc_ :: (EpicExpr a, EpicExpr t, EpicExpr e) =>
->              a -> t -> e -> Term
+> -- | While loop, with an accumulator
+> whileAcc_ :: (EpicExpr t, EpicExpr a, EpicExpr b) =>
+>              t -- ^ Boolean test (most likely effectful)
+>              -> a -- ^ Accumulator (of type a)
+>              -> b -- ^ Body (of type a -> a)
+>              -> Term
 > whileAcc_ = exp3 WhileAcc
 
 > error_ :: String -> Term
@@ -162,6 +195,10 @@ Remaining expression constructs
 > op_ :: (EpicExpr a, EpicExpr b) => Op -> a -> b -> Term
 > op_ op = exp2 (Op op)
 
+> -- | Evaluate an expression lazily
+> lazy_ :: (EpicExpr a) => a -> Term
+> lazy_ = exp1 Lazy
+
 > foreign_ = ForeignCall
 > foreignL_ = LazyForeignCall
 
@@ -169,20 +206,25 @@ Remaining expression constructs
  mkCon tag args = do args' <- mapM expr args
                      return (Con tag args')
 
-> con_ :: Int -> Term
+> -- | Build a constructor with the given tag
+> con_ :: Int -- ^ Tag
+>         -> Term
 > con_ t = return (Con t [])
 
+> -- | Build a case expression with a list of alternatives
 > case_ :: (EpicExpr e) => e -> [State Int CaseAlt] -> Term
 > case_ e alts = do e' <- expr e
 >                   alts' <- mapM id alts
 >                   return (Case e' alts')
 
+> -- | Let bindings with an explicit name
 > letN_ :: (EpicExpr val, EpicExpr scope) =>
 >          Name -> val -> scope -> Term
 > letN_ n val sc = do val' <- expr val
 >                     sc' <- expr sc
 >                     return $ Let n TyAny val' sc'
 
+> -- | Let bindings with higher order syntax
 > let_ :: (EpicExpr e) =>
 >         e -> (Expr -> Term) -> Term
 > let_ e f = do e' <- expr e
@@ -214,21 +256,26 @@ Remaining expression constructs
 > topVar _ = 0
 
 
+> -- | Constant string
 > str :: String -> Expr
 > str x = Const (MkString x)
 
+> -- | Constant integer
 > int :: Int -> Expr
 > int x = Const (MkInt x)
 
+> -- | Constant float
 > float :: Float -> Expr
 > float x = Const (MkFloat x)
 
+> -- | Constant character
 > char :: Char -> Expr
 > char x = Const (MkChar x)
 
 
 > infixl 1 +>
 
+> -- | Sequence terms --- evaluate the first then second
 > (+>) :: (EpicExpr c) => c -> Term -> Term
 > (+>) c k = let_ c (\x -> k)
 
@@ -247,11 +294,21 @@ Remaining expression constructs
 
 > infixl 5 !., @@
 
-> (!.) = Proj
+> -- | Project an argument from an expression which evaluates to
+> -- constructor form. 
+> (!.) :: (EpicExpr t) => t -- ^ Expression in constructor form
+>                         -> Int -- ^ Argument number
+>                         -> Term
+> (!.) t i = exp1 (\x -> Proj x i) t
 
+> -- | Reference to a function name
+> fn :: String -> Expr
 > fn = R . UN
 
-> (@@) :: (EpicExpr f, EpicExpr a) => f -> a -> Term
+> -- | Application
+> (@@) :: (EpicExpr f, EpicExpr a) => f -- ^ function
+>                                     -> a -- ^ argument
+>                                     -> Term
 > (@@) f a = do f' <- expr f
 >               a' <- expr a
 >               case f' of
@@ -259,11 +316,11 @@ Remaining expression constructs
 >                 Con t as -> return $ Con t (as ++ [a'])
 >                 _ -> return $ App f' [a']
 
-> data EpicDecl = forall e. EpicFn e => EpicFn e
->               | Extern Name Type [Type]
->               | Include String
->               | Link String
->               | CType String
+> -- | Top level declarations
+> data EpicDecl = forall e. EpicFn e => EpicFn e -- ^ Normal function
+>               | Include String -- ^ Include a C header
+>               | Link String    -- ^ Link to a C library
+>               | CType String   -- ^ Export a C type
 
 > instance Show EpicDecl where
 >     show (EpicFn e) = show (evalState (func e) 0)
@@ -276,7 +333,7 @@ Remaining expression constructs
 
 > mkDecl :: (Name, EpicDecl) -> Decl
 > mkDecl (n, EpicFn e) = Decl n TyAny (mkFunc e) Nothing []
-> mkDecl (n, Epic.Epic.Extern nm ty tys) = Epic.Language.Extern nm ty tys
+> -- mkDecl (n, Epic.Epic.Extern nm ty tys) = Epic.Language.Extern nm ty tys
 > mkDecl (n, Epic.Epic.Include f) = Epic.Language.Include f
 > mkDecl (n, Epic.Epic.Link f) = Epic.Language.Link f
 > mkDecl (n, Epic.Epic.CType f) = Epic.Language.CType f
