@@ -30,10 +30,13 @@ checking we do (for now).
 >              (nm,(args, rt)):(mkContext xs)
 >          mkContext (_:xs) = mkContext xs
 
-Check all names are in scope in a function, and convert global references (R) to local names
-(V). Also, if any lazy expressions are not already applications, lift them out and make
-a new function. Returns the modified function, and a list of new declarations. The new 
-declarations will *not* have been scopechecked.
+Check all names are in scope in a function, and convert global
+references (R) to local names (V). Also, if any lazy expressions are
+not already applications, lift them out and make a new
+function. Returns the modified function, and a list of new
+declarations. The new declarations will *not* have been scopechecked.
+
+Do Lambda Lifting here too
 
 > scopecheck :: Monad m => Int -> Context -> Name -> Func -> m (Func, [Decl])
 > scopecheck checking ctxt nm (Bind args locs exp fl) = do
@@ -93,6 +96,16 @@ Make a new function, with current env as arguments, and add as a decl
 >            put (maxlen, nextn+1, newd:decls)
 >            return $ Lazy (App (R newname) (map V (map snd env)))
 
+>    tc env (Lam n ty e) = lift e [(n,ty)] where
+>        lift (Lam n ty e) args = lift e ((n,ty):args)
+>        lift e args = do (maxlen, nextn, decls) <- get
+>                         let newname = MN (getRoot nm) nextn
+>                         let newargs = zip (map fst env) (repeat TyAny)
+>                                          ++ reverse args
+>                         let newfn = Bind newargs 0 e []
+>                         let newd = Decl newname TyAny newfn Nothing []
+>                         put (maxlen, nextn+1, newd:decls)
+>                         return $ App (R newname) (map V (map snd env))
 >    tc env (Effect e) = do
 >                e' <- tc env e
 >                return $ Effect e'

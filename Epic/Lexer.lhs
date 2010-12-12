@@ -121,6 +121,8 @@
 >       | TokenSemi
 >       | TokenComma
 >       | TokenBar
+>       | TokenLam
+>       | TokenDot
 >       | TokenExtern
 >       | TokenMemory
 >       | TokenFixed
@@ -175,6 +177,8 @@
 > lexer cont (';':cs) = cont TokenSemi cs
 > lexer cont (',':cs) = cont TokenComma cs
 > lexer cont ('|':cs) = cont TokenBar cs
+> lexer cont ('.':cs) = cont TokenDot cs
+> lexer cont ('\\':cs) = cont TokenLam cs
 > lexer cont ('%':cs) = lexSpecial cont cs
 > lexer cont (c:cs) = lexError c cs
  

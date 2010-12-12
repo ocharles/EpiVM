@@ -106,6 +106,7 @@ Get the arity of a definition in the context
 >           | WhileAcc Expr Expr Expr
 >           | Op Op Expr Expr -- Infix operator
 >           | Let Name Type Expr Expr -- Let binding
+>           | Lam Name Type Expr -- inner lambda
 >           | Error String -- Exit with error message
 >           | Impossible -- Claimed impossible to reach code
 >           | WithMem Allocator Expr Expr -- evaluate with manual allocation

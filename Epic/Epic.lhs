@@ -156,18 +156,18 @@ Remaining expression constructs
 
 > (<$>) nm args = apply_ (R (UN nm)) args
 
-> data EpicTm = forall e. Epic e => Epic e
->             | Extern Name Type [Type]
->             | Include String
->             | Link String
->             | CType String
+> data EpicDecl = forall e. Epic e => Epic e
+>               | Extern Name Type [Type]
+>               | Include String
+>               | Link String
+>               | CType String
 
-> type Program = [(Name, EpicTm)]
+> type Program = [(Name, EpicDecl)]
 
 > name :: String -> Name
 > name = UN
 
-> mkDecl :: (Name, EpicTm) -> Decl
+> mkDecl :: (Name, EpicDecl) -> Decl
 > mkDecl (n, Epic e) = Decl n TyAny (mkFunc e) Nothing []
 > mkDecl (n, Epic.Epic.Extern nm ty tys) = Epic.Language.Extern nm ty tys
 > mkDecl (n, Epic.Epic.Include f) = Epic.Language.Include f
@@ -182,7 +182,8 @@ Remaining expression constructs
 > compileObj :: Program -> FilePath -> IO ()
 > compileObj tms outf = compileDecls outf Nothing (map mkDecl tms) []
 
-> -- |Link a collection of object files
+> -- |Link a collection of object files. By convention, the entry point is
+> -- the function called "main".
 > link :: [FilePath] -> FilePath -> IO ()
 > link fs outf = Epic.Compiler.link fs [] outf True []
 
@@ -193,3 +194,17 @@ Remaining expression constructs
 >              system tmpn
 >              return ()
 
+Some useful functions
+
+> putStr_ x = foreign_ tyUnit "putStr" [(x, tyString)]
+> putStrLn_ x = "putStr" <$> ["append" <$> [x, str "\n"]]
+
+> readStr_ = foreign_ tyString "readStr" []
+
+> append_ x y = foreign_ tyString "append" [(x, tyString), (y, tyString)]
+
+> -- |Some default definitions: putStr, putStrLn, readStr, append
+> basic_defs = [(name "putStr",   Epic putStr_),
+>               (name "putStrLn", Epic putStrLn_),
+>               (name "readStr",  Epic readStr_),
+>               (name "append",   Epic append_)]
