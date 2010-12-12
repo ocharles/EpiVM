@@ -160,6 +160,8 @@ Get the arity of a definition in the context
 >     show (Op o l r) = "(" ++ show l ++ " " ++ show o ++ " " ++ show r ++")"
 >     show (Let n t v e) = "let " ++ show n ++ ":" ++ show t ++ " = " ++
 >                          show v ++ " in " ++ show e
+>     show (Lam n t e) = "\\ " ++ show n ++ ":" ++ show t ++ " . " ++
+>                          show e
 >     show (Error e) = "error(" ++ show e ++ ")"
 >     show Impossible = "Impossible"
 >     show (WithMem a m e) = "%memory(" ++ show a ++ "," ++ show m ++ ", " ++ show e ++ ")"

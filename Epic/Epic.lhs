@@ -12,24 +12,51 @@ Combinators for constructing an expression
 > import Epic.Language
 > import Epic.Compiler
 
-Allow Haskell functions to be used to build expressions, as long as they
-are top level functions.
+Allow Haskell functions to be used to build expressions.
 
-> class Epic e where
->     expr :: e -> State Int Func
+> class EpicExpr e where
+>     expr :: e -> State Int Expr
 
-> instance Epic Expr where
->     expr e = return (Bind [] 0 e [])
+> instance EpicExpr Expr where
+>     expr e = return e
 
-> instance (Epic e) => Epic (Expr -> e) where
+> instance EpicExpr (State Int Expr) where
+>     expr e = e
+
+> type Term = State Int Expr
+
+> instance (EpicExpr e) => EpicExpr (Expr -> e) where
 >     expr f = do var <- get
 >                 put (var+1)
 >                 let arg = MN "evar" var
->                 (Bind vars l e' flags) <- expr (f (R arg))
+>                 e' <- expr (f (R arg))
+>                 return (Lam arg TyAny e')
+
+> instance EpicExpr ([Name], Expr) where
+>     expr (ns, e) = lam ns e where
+>         lam [] e = return e
+>         lam (n:ns) e = do e' <- lam ns e
+>                           return (Lam n TyAny e')
+
+> class EpicFn e where
+>     func :: e -> State Int Func
+
+> instance EpicFn Expr where
+>     func e = return (Bind [] 0 e [])
+
+> instance EpicFn Term where
+>     func e = do e' <- e
+>                 return (Bind [] 0 e' [])
+
+> instance (EpicFn e) => EpicFn (Expr -> e) where
+>     func f = do var <- get
+>                 put (var+1)
+>                 let arg = MN "evar" var
+>                 (Bind vars l e' flags) <- func (f (R arg))
 >                 return (Bind ((arg, TyAny):vars) l e' flags)
 
-> instance Epic ([Name], Expr) where
->     expr (ns, e) = return (Bind (map (\x -> (x, TyAny)) ns) 0 e [])
+> instance EpicFn ([Name], Expr) where
+>     func (ns, e) = return (Bind (map (\x -> (x, TyAny)) ns) 0 e [])
 
 Use arithmetic operators for expressions
 
@@ -54,8 +81,8 @@ Binary operators
 > gt = Op OpGT
 > gte = Op OpGE
 
-> mkFunc :: Epic e => e -> Func
-> mkFunc e = evalState (expr e) 0
+> mkFunc :: EpicFn e => e -> Func
+> mkFunc e = evalState (func e) 0
 
 Build case expressions. Allow functions to be used to bind names in
 case alternatives
@@ -80,6 +107,10 @@ case alternatives
 > instance Alternative Expr where
 >     mkAlt t e = return (Alt t [] e)
 
+> instance Alternative Term where
+>     mkAlt t e = do e' <- e
+>                    return (Alt t [] e')
+
 > instance (Alternative e) => Alternative (Expr -> e) where
 >     mkAlt t f = do var <- get
 >                    put (var+1)
@@ -90,55 +121,119 @@ case alternatives
 > instance Alternative ([Name], Expr) where
 >     mkAlt t (vars, e) = return $ Alt t (map (\x -> (x, TyAny)) vars) e
 
-> con :: Alternative e => Int -> e -> CaseAlt
-> con t e = evalState (mkAlt t e) 0
+> con :: Alternative e => Int -> e -> State Int CaseAlt
+> con t e = mkAlt t e
 
 > const = ConstAlt
 > defaultcase = DefaultCase
 
 Remaining expression constructs
 
-> if_ = If
-> while_ = While
-> whileAcc_ = WhileAcc
-> case_ = Case
-> apply_ = App
-> error_ = Error
-> var x = R (UN x) -- global names, local names are lambda bound
-> mkCon = Con
-> op_ = Op
+> exp1 :: (EpicExpr a) =>
+>         (Expr -> Expr) -> a -> Term
+> exp1 f a = do a' <- expr a
+>               return (f a')
+
+> exp2 :: (EpicExpr a, EpicExpr b) =>
+>         (Expr -> Expr -> Expr) -> a -> b -> Term
+> exp2 f a b = do a' <- expr a; b'<- expr b
+>                 return (f a' b')
+
+> exp3 :: (EpicExpr a, EpicExpr b, EpicExpr c) =>
+>         (Expr -> Expr -> Expr -> Expr) -> a -> b -> c -> Term
+> exp3 f a b c = do a' <- expr a; b'<- expr b; c' <- expr c
+>                   return (f a' b' c')
+
+> if_ :: (EpicExpr a, EpicExpr t, EpicExpr e) =>
+>        a -> t -> e -> Term
+> if_ = exp3 If
+
+> while_ :: (EpicExpr t, EpicExpr b) =>
+>           t -> b -> Term
+> while_ = exp2 While
+
+> whileAcc_ :: (EpicExpr a, EpicExpr t, EpicExpr e) =>
+>              a -> t -> e -> Term
+> whileAcc_ = exp3 WhileAcc
+
+> error_ :: String -> Term
+> error_ str = return (Error str)
+
+> op_ :: (EpicExpr a, EpicExpr b) => Op -> a -> b -> Term
+> op_ op = exp2 (Op op)
+
 > foreign_ = ForeignCall
 > foreignL_ = LazyForeignCall
 
-> let_ e f = let var = MN "loc" (topLet (f (R (MN "DUMMY" 0)))) in
->            Let var TyAny e (f (R var))
+ mkCon :: Int -> [Term] -> Term
+ mkCon tag args = do args' <- mapM expr args
+                     return (Con tag args')
+
+> con_ :: Int -> Term
+> con_ t = return (Con t [])
+
+> case_ :: (EpicExpr e) => e -> [State Int CaseAlt] -> Term
+> case_ e alts = do e' <- expr e
+>                   alts' <- mapM id alts
+>                   return (Case e' alts')
+
+> letN_ :: (EpicExpr val, EpicExpr scope) =>
+>          Name -> val -> scope -> Term
+> letN_ n val sc = do val' <- expr val
+>                     sc' <- expr sc
+>                     return $ Let n TyAny val' sc'
+
+> let_ :: (EpicExpr e) =>
+>         e -> (Expr -> Term) -> Term
+> let_ e f = do e' <- expr e
+>               f' <- f (R (MN "DUMMY" 0))
+>               let var = MN "loc" (topVar f')
+>               fv <- f (R var)
+>               return $ Let var TyAny e' fv
 
 > maxs = foldr max 0
 
-> topLet (Let (MN "loc" x) _ _ _) = x+1
-> topLet (Let _ _ e1 e2) = max (topLet e1) (topLet e2)
-> topLet (App f as) = max (topLet f) (maxs (map topLet as))
-> topLet (Lazy e) = topLet e
-> topLet (Effect e) = topLet e
-> topLet (Con t es) = maxs (map topLet es)
-> topLet (Proj e i) = topLet e
-> topLet (If a t e) = max (max (topLet a) (topLet t)) (topLet e)
-> topLet (While a e) = max (topLet a) (topLet e)
-> topLet (WhileAcc a t e) = max (max (topLet a) (topLet t)) (topLet e)
-> topLet (Op op a e) = max (topLet a) (topLet e)
-> topLet (WithMem a e1 e2) = max (topLet e1) (topLet e2)
-> topLet (ForeignCall t s es) = maxs (map topLet (map fst es))
-> topLet (LazyForeignCall t s es) = maxs (map topLet (map fst es))
-> topLet (Case e alts) = max (topLet e) (maxs (map caseLet alts))
->   where caseLet (Alt t n e) = topLet e
->         caseLet (ConstAlt t e) = topLet e
->         caseLet (DefaultCase e) = topLet e
-> topLet _ = 0
+> topVar (Let (MN "loc" x) _ _ _) = x+1
+> topVar (Let _ _ e1 e2) = max (topVar e1) (topVar e2)
+> topVar (App f as) = max (topVar f) (maxs (map topVar as))
+> topVar (Lazy e) = topVar e
+> topVar (Effect e) = topVar e
+> topVar (Con t es) = maxs (map topVar es)
+> topVar (Proj e i) = topVar e
+> topVar (If a t e) = max (max (topVar a) (topVar t)) (topVar e)
+> topVar (While a e) = max (topVar a) (topVar e)
+> topVar (WhileAcc a t e) = max (max (topVar a) (topVar t)) (topVar e)
+> topVar (Op op a e) = max (topVar a) (topVar e)
+> topVar (WithMem a e1 e2) = max (topVar e1) (topVar e2)
+> topVar (ForeignCall t s es) = maxs (map topVar (map fst es))
+> topVar (LazyForeignCall t s es) = maxs (map topVar (map fst es))
+> topVar (Case e alts) = max (topVar e) (maxs (map caseLet alts))
+>   where caseLet (Alt t n e) = topVar e
+>         caseLet (ConstAlt t e) = topVar e
+>         caseLet (DefaultCase e) = topVar e
+> topVar _ = 0
 
+
+> str :: String -> Expr
 > str x = Const (MkString x)
 
+> int :: Int -> Expr
+> int x = Const (MkInt x)
+
+> float :: Float -> Expr
+> float x = Const (MkFloat x)
+
+> char :: Char -> Expr
+> char x = Const (MkChar x)
+
+
 > infixl 1 +>
-> (+>) c k = Let (MN "discard" 0) TyAny c k
+
+> (+>) :: (EpicExpr c) => c -> Term -> Term
+> (+>) c k = let_ c (\x -> k)
+
+> tyInt, tyChar, tyBool, tyFloat, tyString, tyPtr, tyUnit, tyAny :: Type
+> tyC :: String -> Type
 
 > tyInt    = TyInt
 > tyChar   = TyChar
@@ -150,17 +245,29 @@ Remaining expression constructs
 > tyAny    = TyAny
 > tyC      = TyCType
 
-> infixl 5 !., <$>
+> infixl 5 !., @@
 
 > (!.) = Proj
 
-> (<$>) nm args = apply_ (R (UN nm)) args
+> fn = R . UN
 
-> data EpicDecl = forall e. Epic e => Epic e
+> (@@) :: (EpicExpr f, EpicExpr a) => f -> a -> Term
+> (@@) f a = do f' <- expr f
+>               a' <- expr a
+>               case f' of
+>                 App fi as -> return $ App fi (as ++ [a'])
+>                 Con t as -> return $ Con t (as ++ [a'])
+>                 _ -> return $ App f' [a']
+
+> data EpicDecl = forall e. EpicFn e => EpicFn e
 >               | Extern Name Type [Type]
 >               | Include String
 >               | Link String
 >               | CType String
+
+> instance Show EpicDecl where
+>     show (EpicFn e) = show (evalState (func e) 0)
+
 
 > type Program = [(Name, EpicDecl)]
 
@@ -168,7 +275,7 @@ Remaining expression constructs
 > name = UN
 
 > mkDecl :: (Name, EpicDecl) -> Decl
-> mkDecl (n, Epic e) = Decl n TyAny (mkFunc e) Nothing []
+> mkDecl (n, EpicFn e) = Decl n TyAny (mkFunc e) Nothing []
 > mkDecl (n, Epic.Epic.Extern nm ty tys) = Epic.Language.Extern nm ty tys
 > mkDecl (n, Epic.Epic.Include f) = Epic.Language.Include f
 > mkDecl (n, Epic.Epic.Link f) = Epic.Language.Link f
@@ -197,14 +304,19 @@ Remaining expression constructs
 Some useful functions
 
 > putStr_ x = foreign_ tyUnit "putStr" [(x, tyString)]
-> putStrLn_ x = "putStr" <$> ["append" <$> [x, str "\n"]]
+
+> putStrLn_ :: Expr -> Term
+> putStrLn_ x = (fn "putStr") @@ ((fn "append") @@ x @@ str "\n")
 
 > readStr_ = foreign_ tyString "readStr" []
 
 > append_ x y = foreign_ tyString "append" [(x, tyString), (y, tyString)]
+> intToString_ x = foreign_ tyString "intToStr" [(x, tyInt)]
 
 > -- |Some default definitions: putStr, putStrLn, readStr, append
-> basic_defs = [(name "putStr",   Epic putStr_),
->               (name "putStrLn", Epic putStrLn_),
->               (name "readStr",  Epic readStr_),
->               (name "append",   Epic append_)]
+> basic_defs = [(name "putStr",      EpicFn putStr_),
+>               (name "putStrLn",    EpicFn putStrLn_),
+>               (name "readStr",     EpicFn readStr_),
+>               (name "append",      EpicFn append_),
+>               (name "intToString", EpicFn intToString_)]
+
