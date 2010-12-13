@@ -5,19 +5,19 @@
 > -- Copyright   : Edwin Brady
 > -- Licence     : BSD-style (see LICENSE in the distribution)
 > --
-> -- Maintainer  : eb@dcs.st-and.ac.uk
+> -- Maintainer  : eb@cs.st-andrews.ac.uk
 > -- Stability   : experimental
 > -- Portability : non-portable
 > --
 > -- Combinators for builing Epic programs
 
 > module Epic.Epic(-- * Expressions
->                  EpicExpr, EpicFn, Alternative,
+>                  EpicExpr, term, EpicFn, Alternative,
 >                  Expr, Term, Name, name,
 >                  (@@), case_, con_, con, 
 >                  if_, while_, whileAcc_, error_, op_,
 >                  lazy_, foreign_, foreignL_, let_, letN_, Op(..),
->                  str, int, float, char, (!.), fn, (+>),
+>                  str, int, float, char, (!.), fn, ref, (+>),
 >                  -- * Types
 >                  tyInt, tyChar, tyBool, tyFloat, tyString,
 >                  tyPtr, tyUnit, tyAny, tyC,
@@ -44,23 +44,23 @@ Allow Haskell functions to be used to build expressions.
 
 > -- | Build expressions, with a name supply
 > class EpicExpr e where
->     expr :: e -> State Int Expr
+>     term :: e -> State Int Expr
 
 > instance EpicExpr Expr where
->     expr e = return e
+>     term e = return e
 
 > instance EpicExpr Term where
->     expr e = e
+>     term e = e
 
 > instance (EpicExpr e) => EpicExpr (Expr -> e) where
->     expr f = do var <- get
+>     term f = do var <- get
 >                 put (var+1)
 >                 let arg = MN "evar" var
->                 e' <- expr (f (R arg))
+>                 e' <- term (f (R arg))
 >                 return (Lam arg TyAny e')
 
 > instance EpicExpr ([Name], Expr) where
->     expr (ns, e) = lam ns e where
+>     term (ns, e) = lam ns e where
 >         lam [] e = return e
 >         lam (n:ns) e = do e' <- lam ns e
 >                           return (Lam n TyAny e')
@@ -70,11 +70,13 @@ Allow Haskell functions to be used to build expressions.
 >     func :: e -> State Int Func
 
 > instance EpicFn Expr where
->     func e = return (Bind [] 0 e [])
+>     func e = return (delam e [])
+>       where delam (Lam n ty e) acc = delam e ((n,ty):acc)
+>             delam e acc = Bind (reverse acc) 0 e []
 
 > instance EpicFn Term where
 >     func e = do e' <- e
->                 return (Bind [] 0 e' [])
+>                 func e'
 
 > instance (EpicFn e) => EpicFn (Expr -> e) where
 >     func f = do var <- get
@@ -144,12 +146,12 @@ case alternatives
 > -- | Case alternative for a constant
 > const :: EpicExpr a => Int -- ^ the constant
 >                        -> a -> State Int CaseAlt
-> const t a = do a' <- expr a
+> const t a = do a' <- term a
 >                return (ConstAlt t a')
 
 > -- | Default case if no other branches apply
 > defaultcase :: EpicExpr a => a -> State Int CaseAlt
-> defaultcase a = do a' <- expr a
+> defaultcase a = do a' <- term a
 >                    return (DefaultCase a')
 
 
@@ -157,17 +159,17 @@ Remaining expression constructs
 
 > exp1 :: (EpicExpr a) =>
 >         (Expr -> Expr) -> a -> Term
-> exp1 f a = do a' <- expr a
+> exp1 f a = do a' <- term a
 >               return (f a')
 
 > exp2 :: (EpicExpr a, EpicExpr b) =>
 >         (Expr -> Expr -> Expr) -> a -> b -> Term
-> exp2 f a b = do a' <- expr a; b'<- expr b
+> exp2 f a b = do a' <- term a; b'<- term b
 >                 return (f a' b')
 
 > exp3 :: (EpicExpr a, EpicExpr b, EpicExpr c) =>
 >         (Expr -> Expr -> Expr -> Expr) -> a -> b -> c -> Term
-> exp3 f a b c = do a' <- expr a; b'<- expr b; c' <- expr c
+> exp3 f a b c = do a' <- term a; b'<- term b; c' <- term c
 >                   return (f a' b' c')
 
 > if_ :: (EpicExpr a, EpicExpr t, EpicExpr e) =>
@@ -213,21 +215,21 @@ Remaining expression constructs
 
 > -- | Build a case expression with a list of alternatives
 > case_ :: (EpicExpr e) => e -> [State Int CaseAlt] -> Term
-> case_ e alts = do e' <- expr e
+> case_ e alts = do e' <- term e
 >                   alts' <- mapM id alts
 >                   return (Case e' alts')
 
 > -- | Let bindings with an explicit name
 > letN_ :: (EpicExpr val, EpicExpr scope) =>
 >          Name -> val -> scope -> Term
-> letN_ n val sc = do val' <- expr val
->                     sc' <- expr sc
+> letN_ n val sc = do val' <- term val
+>                     sc' <- term sc
 >                     return $ Let n TyAny val' sc'
 
 > -- | Let bindings with higher order syntax
 > let_ :: (EpicExpr e) =>
 >         e -> (Expr -> Term) -> Term
-> let_ e f = do e' <- expr e
+> let_ e f = do e' <- term e
 >               f' <- f (R (MN "DUMMY" 0))
 >               let var = MN "loc" (topVar f')
 >               fv <- f (R var)
@@ -305,12 +307,16 @@ Remaining expression constructs
 > fn :: String -> Expr
 > fn = R . UN
 
+> -- | Reference to a function name
+> ref :: Name -> Expr
+> ref = R
+
 > -- | Application
 > (@@) :: (EpicExpr f, EpicExpr a) => f -- ^ function
 >                                     -> a -- ^ argument
 >                                     -> Term
-> (@@) f a = do f' <- expr f
->               a' <- expr a
+> (@@) f a = do f' <- term f
+>               a' <- term a
 >               case f' of
 >                 App fi as -> return $ App fi (as ++ [a'])
 >                 Con t as -> return $ Con t (as ++ [a'])
@@ -338,6 +344,7 @@ Remaining expression constructs
 > mkDecl (n, Epic.Epic.Link f) = Epic.Language.Link f
 > mkDecl (n, Epic.Epic.CType f) = Epic.Language.CType f
 
+> -- |Compile a program to an executable
 > compile :: Program -> FilePath -> IO ()
 > compile tms outf = do compileDecls (outf++".o") Nothing (map mkDecl tms) []
 >                       Epic.Compiler.link [outf++".o"] [] outf True []
@@ -347,7 +354,7 @@ Remaining expression constructs
 > compileObj tms outf = compileDecls outf Nothing (map mkDecl tms) []
 
 > -- |Link a collection of object files. By convention, the entry point is
-> -- the function called "main".
+> -- the function called 'main'.
 > link :: [FilePath] -> FilePath -> IO ()
 > link fs outf = Epic.Compiler.link fs [] outf True []
 
@@ -370,7 +377,7 @@ Some useful functions
 > append_ x y = foreign_ tyString "append" [(x, tyString), (y, tyString)]
 > intToString_ x = foreign_ tyString "intToStr" [(x, tyInt)]
 
-> -- |Some default definitions: putStr, putStrLn, readStr, append
+> -- | Some default definitions: putStr, putStrLn, readStr, append, intToString
 > basic_defs = [(name "putStr",      EpicFn putStr_),
 >               (name "putStrLn",    EpicFn putStrLn_),
 >               (name "readStr",     EpicFn readStr_),

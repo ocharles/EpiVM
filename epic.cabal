@@ -7,13 +7,13 @@ Maintainer:	eb@dcs.st-and.ac.uk
 Homepage:	http://www.dcs.st-and.ac.uk/~eb/epic.php
 Stability:	experimental
 Category:       Compilers/Interpreters
-Synopsis:	Compiler for a supercombinator language
+Synopsis:	Compiler for a simple functional language
 Description:    Epic is a simple functional language which compiles to
                 reasonably efficient C code, using the Boehm-Demers-Weiser 
 	        garbage collector (<http://www.hpl.hp.com/personal/Hans_Boehm/gc/>). 
                 It is intended as a compiler back end, and is currently used 
                 as a back end for Epigram (<http://www.e-pig.org>) and Idris 
-                (<http://www.cs.st-and.ac.uk/~eb/Idris>).
+                (<http://idris-lang.org/>).
 	        It can be invoked either as a library or an application.
 
 Data-files:    evm/libevm.a evm/closure.h evm/stdfuns.h evm/stdfuns.c evm/mainprog.c evm/emalloc.h evm/gc_header.h
