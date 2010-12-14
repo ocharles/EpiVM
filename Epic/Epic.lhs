@@ -204,8 +204,9 @@ Remaining expression constructs
 > lazy_ :: (EpicExpr a) => a -> Term
 > lazy_ = exp1 Lazy
 
-> foreign_ = ForeignCall
-> foreignL_ = LazyForeignCall
+> foreign_, foreignL_ :: Type -> String -> [(Expr, Type)] -> Term
+> foreign_ t str args = term $ ForeignCall t str args
+> foreignL_ t str args = term $ LazyForeignCall t str args
 
  mkCon :: Int -> [Term] -> Term
  mkCon tag args = do args' <- mapM expr args
@@ -262,20 +263,20 @@ Remaining expression constructs
 
 
 > -- | Constant string
-> str :: String -> Expr
-> str x = Const (MkString x)
+> str :: String -> Term
+> str x = term $ Const (MkString x)
 
 > -- | Constant integer
-> int :: Int -> Expr
-> int x = Const (MkInt x)
+> int :: Int -> Term
+> int x = term $ Const (MkInt x)
 
 > -- | Constant float
-> float :: Float -> Expr
-> float x = Const (MkFloat x)
+> float :: Float -> Term
+> float x = term $ Const (MkFloat x)
 
 > -- | Constant character
-> char :: Char -> Expr
-> char x = Const (MkChar x)
+> char :: Char -> Term
+> char x = term $ Const (MkChar x)
 
 
 > infixl 1 +>
@@ -307,12 +308,12 @@ Remaining expression constructs
 > (!.) t i = exp1 (\x -> Proj x i) t
 
 > -- | Reference to a function name
-> fn :: String -> Expr
-> fn = R . UN
+> fn :: String -> Term
+> fn x = term (R (UN x))
 
 > -- | Reference to a function name
-> ref :: Name -> Expr
-> ref = R
+> ref :: Name -> Term
+> ref x = term (R x)
 
 > -- | Application
 > (@@) :: (EpicExpr f, EpicExpr a) => f -- ^ function

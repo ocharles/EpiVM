@@ -25,10 +25,10 @@
 > build :: Lang -> Term
 > build (Lam f) = term (\x -> build (f (EpicRef x)))
 > build (EpicRef x) = term x
-> build (Ref n) = term (ref n)
+> build (Ref n) = ref n
 > build (App f a) = build f @@ build a
-> build (Const (CInt x)) = term $ int x
-> build (Const (CStr x)) = term $ str x
+> build (Const (CInt x)) = int x
+> build (Const (CStr x)) = str x
 > build (Op IAppend l r) = fn "append" @@ build l @@ build r
 > build (Op op l r) = op_ (buildOp op) (build l) (build r)
 >  where buildOp IPlus = Plus
