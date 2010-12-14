@@ -283,6 +283,9 @@ int evm_numArgs();
 VMState* init_evm(int argc, char* argv[]);
 void close_evm(VMState* vm);
 
+// Run the main program
+void epic_main(int argc, char* argv[]);
+
 void* FASTMALLOC(int size);
 
 #define CONSTRUCTOR1m(c,t,x)		\
