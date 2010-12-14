@@ -231,7 +231,7 @@ Programs
 > appForm _ = False
 
 > checkLevel :: [CompileOptions] -> Int
-> checkLevel [] = 0
+> checkLevel [] = 1
 > checkLevel (Checking i:_) = i
 > checkLevel (_:xs) = checkLevel xs
 
