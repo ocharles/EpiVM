@@ -1,0 +1,21 @@
+Name:		fl
+Version:	0.1.1
+Author:		Edwin Brady
+License:	BSD3
+License-file:	LICENSE
+Maintainer:	eb@cs.st-andrews.ac.uk
+Homepage:	http://www.dcs.st-and.ac.uk/~eb/epic.php
+Stability:	experimental
+Category:       Compilers/Interpreters
+Synopsis:	Demonstration language for Epic
+Description:    Epic is a simple functional language which compiles to
+                reasonably efficient C code. This language demonstrates it.
+
+Cabal-Version:  >= 1.6
+Build-type:     Simple
+
+Executable     fl
+               Main-is: Main.lhs
+               hs-source-dirs: src
+               Other-modules: Lang
+               Build-depends: base >=4 && <5, haskell98, Cabal, directory, epic
