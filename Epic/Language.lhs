@@ -15,6 +15,7 @@
 >                     | GCCOpt String -- ^ Extra GCC option
 >                     | Debug -- ^ Generate debug info
 >                     | Checking Int -- ^ Checking level (0 none)
+>                     | ExternalMain -- ^ main is defined externally (in C)
 >   deriving Eq
 
 Raw data types. Int, Char, Bool are unboxed.

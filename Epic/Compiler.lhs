@@ -121,11 +121,10 @@ Chop off everything after the last / - get the directory a file is in
 > link :: [FilePath] -- ^ Object files
 >         -> [FilePath] -- ^ Extra include files for main program
 >         -> FilePath -- ^ Executable filename
->         -> Bool -- ^ Generate a 'main' (False if externally defined)
 >         -> [CompileOptions] -- Keep the C file
 >         -> IO ()
-> link infs extraIncs outf genmain opts = do
->     mainprog <- if genmain then mkMain extraIncs else return ""
+> link infs extraIncs outf opts = do
+>     mainprog <- if (not (elem ExternalMain opts)) then mkMain extraIncs else return ""
 >     fp <- getDataFileName "evm/closure.h"
 >     let libdir = trimLast fp
 >     let dbg = if (elem Debug opts) then "-g" else "-O3"

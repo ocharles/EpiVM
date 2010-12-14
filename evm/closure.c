@@ -11,6 +11,7 @@ VAL one;
 VAL* zcon;
 int v_argc;
 VAL* v_argv;
+VMState* vm;
 
 extern func _do___U__main();
 

@@ -23,13 +23,14 @@
 >           copts <- getCOpts opts
 >           extras <- getExtra opts
 >           if ((length ofiles) > 0 && (not (elem Obj opts)))
->              then link (ofiles ++ copts) extras outfile (not (elem ExtMain opts)) (mkOpts opts)
+>              then link (ofiles ++ copts) extras outfile (mkOpts opts)
 >              else return ()
 >   where mkOpts (KeepInt:xs) = KeepC:(mkOpts xs)
 >         mkOpts (TraceOn:xs) = Trace:(mkOpts xs)
 >         mkOpts (Header f:xs) = MakeHeader f:(mkOpts xs)
 >         mkOpts (DbgInfo:xs) = Debug:(mkOpts xs)
 >         mkOpts (CheckLvl i:xs) = Checking i:(mkOpts xs)
+>         mkOpts (ExtMain:xs) = ExternalMain:(mkOpts xs)
 >         mkOpts (_:xs) = mkOpts xs
 >         mkOpts [] = []
 

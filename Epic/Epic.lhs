@@ -24,7 +24,10 @@
 >                  -- * Declarations and programs
 >                  EpicDecl(..), Program, 
 >                  -- * Compiling and execution
->                  Epic.Epic.compile, compileObj, Epic.Epic.link, run,
+>                  Epic.Epic.compile, compileObj, Epic.Epic.link, 
+>                  Epic.Epic.compileWith, compileObjWith, Epic.Epic.linkWith, 
+>                  run,
+>                  CompileOptions(..),
 >                  -- * Some basic definitions
 >                  basic_defs) where
 
@@ -331,7 +334,6 @@ Remaining expression constructs
 > instance Show EpicDecl where
 >     show (EpicFn e) = show (evalState (func e) 0)
 
-
 > type Program = [(Name, EpicDecl)]
 
 > name :: String -> Name
@@ -346,17 +348,32 @@ Remaining expression constructs
 
 > -- |Compile a program to an executable
 > compile :: Program -> FilePath -> IO ()
-> compile tms outf = do compileDecls (outf++".o") Nothing (map mkDecl tms) []
->                       Epic.Compiler.link [outf++".o"] [] outf True []
+> compile = compileWith []
+
+> -- |Compile a program to an executable, with options
+> compileWith :: [CompileOptions] -> Program -> FilePath -> IO ()
+> compileWith opts tms outf 
+>                 = do compileDecls (outf++".o") Nothing (map mkDecl tms) opts
+>                      Epic.Compiler.link [outf++".o"] [] outf opts
 
 > -- |Compile a program to a .o
 > compileObj :: Program -> FilePath -> IO ()
-> compileObj tms outf = compileDecls outf Nothing (map mkDecl tms) []
+> compileObj = compileObjWith []
+
+> -- |Compile a program to a .o, with options
+> compileObjWith :: [CompileOptions] -> Program -> FilePath -> IO ()
+> compileObjWith opts tms outf 
+>                    = compileDecls outf Nothing (map mkDecl tms) opts
 
 > -- |Link a collection of object files. By convention, the entry point is
 > -- the function called 'main'.
 > link :: [FilePath] -> FilePath -> IO ()
-> link fs outf = Epic.Compiler.link fs [] outf True []
+> link = linkWith []
+
+> -- |Link a collection of object files, with options. By convention, 
+> -- the entry point is the function called 'main'.
+> linkWith :: [CompileOptions] -> [FilePath] -> FilePath -> IO ()
+> linkWith opts fs outf = Epic.Compiler.link fs [] outf opts
 
 > run :: Program -> IO ()
 > run tms = do (tmpn, tmph) <- tempfile
