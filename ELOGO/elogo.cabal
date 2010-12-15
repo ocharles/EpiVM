@@ -1,0 +1,24 @@
+Name:		elogo
+Version:	0.1.1
+Author:		Edwin Brady
+License:	BSD3
+License-file:	LICENSE
+Maintainer:	eb@cs.st-andrews.ac.uk
+Homepage:	http://www.dcs.st-and.ac.uk/~eb/epic.php
+Stability:	experimental
+Category:       Compilers/Interpreters
+Synopsis:	Embedded LOGO in Haskell, with Epic output
+Description:    Epic is a simple functional language which compiles to
+                reasonably efficient C code. This language is a demonstration
+                of how to write a dynamically typed language with some system
+                interaction (specifically graphics).
+Data-files:     sdl/sdlrun.o sdl/sdlrun.h
+
+Cabal-Version:  >= 1.6
+Build-type:     Custom
+
+Executable     elogo
+               Main-is: Main.lhs
+               hs-source-dirs: src
+               Other-modules: LOGO MkEpic SDLprims Paths_elogo
+               Build-depends: base >=4 && <5, haskell98, Cabal, directory, epic
