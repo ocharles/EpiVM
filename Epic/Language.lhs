@@ -16,6 +16,7 @@
 >                     | Debug -- ^ Generate debug info
 >                     | Checking Int -- ^ Checking level (0 none)
 >                     | ExternalMain -- ^ main is defined externally (in C)
+>                     | MainInc FilePath -- ^ File to #include in main program
 >   deriving Eq
 
 Raw data types. Int, Char, Bool are unboxed.

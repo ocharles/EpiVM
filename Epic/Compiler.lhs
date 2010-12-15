@@ -117,13 +117,19 @@ Chop off everything after the last / - get the directory a file is in
 >          hClose outh
 >          return decls
 
+> getExtra :: [CompileOptions] -> IO [String]
+> getExtra ((MainInc x):xs) = do fns <- getExtra xs
+>                                return (x:fns)
+> getExtra (_:xs) = getExtra xs
+> getExtra [] = return []
+
 > -- |Link a collection of .o files into an executable
 > link :: [FilePath] -- ^ Object files
->         -> [FilePath] -- ^ Extra include files for main program
 >         -> FilePath -- ^ Executable filename
 >         -> [CompileOptions] -- Keep the C file
 >         -> IO ()
-> link infs extraIncs outf opts = do
+> link infs outf opts = do
+>     extraIncs <- getExtra opts
 >     mainprog <- if (not (elem ExternalMain opts)) then mkMain extraIncs else return ""
 >     fp <- getDataFileName "evm/closure.h"
 >     let libdir = trimLast fp
@@ -131,7 +137,7 @@ Chop off everything after the last / - get the directory a file is in
 >     let cmd = "gcc -DUSE_BOEHM -x c " ++ dbg ++ " -foptimize-sibling-calls " ++ mainprog ++ " -x none -L" ++
 >               libdir++" -I"++libdir ++ " " ++
 >               (concat (map (++" ") infs)) ++ 
->               " -levm -lgc -lpthread -lgmp -o "++outf
+>               " -levm -lgc -lpthread -lgmp -o "++outf ++ " " ++ addGCC opts
 >     -- putStrLn $ cmd
 >     exit <- system cmd
 >     if (exit /= ExitSuccess)

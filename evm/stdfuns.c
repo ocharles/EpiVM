@@ -91,6 +91,16 @@ char* intToStr(int x)
     return buf;
 }
 
+double intToFloat(int x)
+{
+    return (double)x;
+}
+
+int floatToInt(double x)
+{
+    return (int)x;
+}
+
 double strToFloat(char* str)
 {
 //    printf("%s, %f\n",str, strtod(str,NULL));

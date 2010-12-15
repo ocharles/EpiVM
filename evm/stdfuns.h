@@ -59,6 +59,9 @@ char* intToStr(int x);
 double strToFloat(char* str);
 char* floatToStr(double x);
 
+double intToFloat(int x);
+int floatToInt(double x);
+
 mpz_t* strToBigInt(char* str);
 char* bigIntToStr(mpz_t x);
 

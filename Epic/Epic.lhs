@@ -14,13 +14,14 @@
 > module Epic.Epic(-- * Expressions
 >                  EpicExpr, term, EpicFn, Alternative,
 >                  Expr, Term, Name, name,
->                  (@@), case_, con_, con, 
+>                  (@@), case_, con_, tuple_, con, tuple,
 >                  if_, while_, whileAcc_, error_, op_,
->                  lazy_, foreign_, foreignL_, let_, letN_, Op(..),
->                  str, int, float, char, (!.), fn, ref, (+>),
+>                  lazy_, foreign_, foreignL_, foreignConst_, foreignConstL_,
+>                  let_, letN_, Op(..),
+>                  str, int, float, char, bool, (!.), fn, ref, (+>),
 >                  -- * Types
->                  tyInt, tyChar, tyBool, tyFloat, tyString,
->                  tyPtr, tyUnit, tyAny, tyC,
+>                  Type, tyInt, tyChar, tyBool, tyFloat, tyString,
+>                  tyPtr, tyUnit, tyAny, tyC, 
 >                  -- * Declarations and programs
 >                  EpicDecl(..), Program, 
 >                  -- * Compiling and execution
@@ -88,8 +89,13 @@ Allow Haskell functions to be used to build expressions.
 >                 (Bind vars l e' flags) <- func (f (R arg))
 >                 return (Bind ((arg, TyAny):vars) l e' flags)
 
-> instance EpicFn ([Name], Expr) where
->     func (ns, e) = return (Bind (map (\x -> (x, TyAny)) ns) 0 e [])
+ instance EpicFn ([Name], Expr) where
+     func (ns, e) = return (Bind (map (\x -> (x, TyAny)) ns) 0 e [])
+
+> instance (EpicFn e) => EpicFn ([Name], e) where
+>     func (ns, e) 
+>        = do (Bind vars l e' flags) <- func e
+>             return (Bind (map (\x -> (x, TyAny)) ns ++ vars) 0 e' [])
 
 Binary operators
 
@@ -145,6 +151,11 @@ case alternatives
 >                         -> e -- ^ RHS of alternative
 >                         -> State Int CaseAlt
 > con t e = mkAlt t e
+
+> -- | Case alternative for a tuple with the given tag
+> tuple :: Alternative e => e -- ^ RHS of alternative
+>                         -> State Int CaseAlt
+> tuple e = mkAlt 0 e
 
 > -- | Case alternative for a constant
 > const :: EpicExpr a => Int -- ^ the constant
@@ -204,9 +215,18 @@ Remaining expression constructs
 > lazy_ :: (EpicExpr a) => a -> Term
 > lazy_ = exp1 Lazy
 
-> foreign_, foreignL_ :: Type -> String -> [(Expr, Type)] -> Term
-> foreign_ t str args = term $ ForeignCall t str args
-> foreignL_ t str args = term $ LazyForeignCall t str args
+> termF (x,y) = do x' <-term x
+>                  return (x', y)
+
+> foreign_, foreignL_ :: EpicExpr e => Type -> String -> [(e, Type)] -> Term
+> foreign_ t str args = do args' <- mapM termF args
+>                          term $ ForeignCall t str args'
+> foreignL_ t str args = do args' <- mapM termF args
+>                           term $ LazyForeignCall t str args'
+
+> foreignConst_, foreignConstL_ :: Type -> String -> Term
+> foreignConst_ t str = term $ ForeignCall t str []
+> foreignConstL_ t str = term $ LazyForeignCall t str []
 
  mkCon :: Int -> [Term] -> Term
  mkCon tag args = do args' <- mapM expr args
@@ -216,6 +236,10 @@ Remaining expression constructs
 > con_ :: Int -- ^ Tag
 >         -> Term
 > con_ t = return (Con t [])
+
+> -- | Build a tuple
+> tuple_ :: Term
+> tuple_ = con_ 0
 
 > -- | Build a case expression with a list of alternatives
 > case_ :: (EpicExpr e) => e -> [State Int CaseAlt] -> Term
@@ -278,6 +302,9 @@ Remaining expression constructs
 > char :: Char -> Term
 > char x = term $ Const (MkChar x)
 
+> -- | Constant bool
+> bool :: Bool -> Term
+> bool b = term $ Const (MkBool b)
 
 > infixl 1 +>
 
@@ -355,7 +382,7 @@ Remaining expression constructs
 > compileWith :: [CompileOptions] -> Program -> FilePath -> IO ()
 > compileWith opts tms outf 
 >                 = do compileDecls (outf++".o") Nothing (map mkDecl tms) opts
->                      Epic.Compiler.link [outf++".o"] [] outf opts
+>                      Epic.Compiler.link [outf++".o"] outf opts
 
 > -- |Compile a program to a .o
 > compileObj :: Program -> FilePath -> IO ()
@@ -374,7 +401,7 @@ Remaining expression constructs
 > -- |Link a collection of object files, with options. By convention, 
 > -- the entry point is the function called 'main'.
 > linkWith :: [CompileOptions] -> [FilePath] -> FilePath -> IO ()
-> linkWith opts fs outf = Epic.Compiler.link fs [] outf opts
+> linkWith opts fs outf = Epic.Compiler.link fs outf opts
 
 > run :: Program -> IO ()
 > run tms = do (tmpn, tmph) <- tempfile
@@ -385,14 +412,19 @@ Remaining expression constructs
 
 Some useful functions
 
+> putStr_ :: Expr -> Term
 > putStr_ x = foreign_ tyUnit "putStr" [(x, tyString)]
 
 > putStrLn_ :: Expr -> Term
 > putStrLn_ x = (fn "putStr") @@ ((fn "append") @@ x @@ str "\n")
 
-> readStr_ = foreign_ tyString "readStr" []
+> readStr_ :: Term
+> readStr_ = foreign_ tyString "readStr" ([] :: [(Expr, Type)])
 
+> append_ :: Expr -> Expr -> Term
 > append_ x y = foreign_ tyString "append" [(x, tyString), (y, tyString)]
+
+> intToString_ :: Expr -> Term
 > intToString_ x = foreign_ tyString "intToStr" [(x, tyInt)]
 
 > -- | Some default definitions: putStr, putStrLn, readStr, append, intToString

@@ -21,9 +21,9 @@
 >           outfile <- getOutput opts
 >           ofiles <- compileFiles fns (mkOpts opts)
 >           copts <- getCOpts opts
->           extras <- getExtra opts
+>           -- extras <- getExtra opts
 >           if ((length ofiles) > 0 && (not (elem Obj opts)))
->              then link (ofiles ++ copts) extras outfile (mkOpts opts)
+>              then link (ofiles ++ copts) outfile (mkOpts opts)
 >              else return ()
 >   where mkOpts (KeepInt:xs) = KeepC:(mkOpts xs)
 >         mkOpts (TraceOn:xs) = Trace:(mkOpts xs)
@@ -31,6 +31,7 @@
 >         mkOpts (DbgInfo:xs) = Debug:(mkOpts xs)
 >         mkOpts (CheckLvl i:xs) = Checking i:(mkOpts xs)
 >         mkOpts (ExtMain:xs) = ExternalMain:(mkOpts xs)
+>         mkOpts (ExtraInc i:xs) = MainInc i:(mkOpts xs)
 >         mkOpts (_:xs) = mkOpts xs
 >         mkOpts [] = []
 
@@ -130,12 +131,6 @@
 >                             return (x:fns)
 > getCOpts (_:xs) = getCOpts xs
 > getCOpts [] = return []
-
-> getExtra :: [Option] -> IO [String]
-> getExtra ((ExtraInc x):xs) = do fns <- getExtra xs
->                                 return (x:fns)
-> getExtra (_:xs) = getExtra xs
-> getExtra [] = return []
 
 > processFlags :: [Option] -> Bool -> IO ()
 > processFlags [] True = do putStrLn ""; exitWith ExitSuccess
