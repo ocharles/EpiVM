@@ -1,5 +1,7 @@
 > module MkEpic(output, testProg) where
 
+Convert a Turtle program into an Epic program
+
 > import Turtle
 > import SDLprims
 > import Paths_atuin
@@ -9,31 +11,51 @@
 > opts = [GCCOpt "-lSDLmain -lsdl -lsdl_gfx -Wl,-framework,Cocoa",
 >         MainInc "SDL/SDL.h"]
 
-These get passed around every function and updated as we go
+Epic takes Strings as identifiers, so we'll need to convert our identifiers
+to strings...
 
 > fullId :: Id -> String
 > fullId n = e n
 >    where e [] = ""
 >          e (x:xs) = "_" ++ x ++ e xs
 
+...then to Epic identifiers.
+
 > epicId :: Id -> Name
 > epicId i = name (fullId i)
 
-The main compiler function, turns a logo program into an Epic term
+The main compiler function, turns a logo program into an Epic
+term. Just traverses a Turtle and calls the appropriate Epic
+primitives, and the primitives we've defined in SDLprims.
+
+The compiled program maintains a turtle state, so we'll pass the
+state to the compiler.
 
 > class Compile a where
 >     compile :: Expr -> a -> Term
 
 > instance Compile Turtle where
+
+When we sequence commands, we need to pass the new state from the first
+command as input to the second command.
+
 >     compile state (Seq x y) 
 >        = let_ (compile state x) (\state' -> compile state' y)
 >     compile state (Turtle c)  = compile state c
+
+When applying a function we need to add the state as the first argument.
+
 >     compile state (Call i es) 
 >          = app (fn (fullId i) @@ state) es
 >        where app f [] = f
 >              app f (e:es) = app (f @@ compile state e) es
+
 >     compile state (Let i e scope) 
 >         = letN_ (epicId i) (compile state e) (compile state scope)
+
+It's a dynamically typed language, so when we compute an expression we
+need to check the values are the right type at each step. The primitives
+in SDLprims do this for us.
 
 > instance Compile Exp where
 >     compile state (Infix op l r) 
@@ -44,6 +66,10 @@ The main compiler function, turns a logo program into an Epic term
 >               mkOp Turtle.Divide = primDivide
 >     compile state (Var i) = ref (epicId i)
 >     compile state (Const i) = compile state i
+
+Values are wrapped in an ADT so we can see what type they are.
+i.e. data Value = MkInt Int | MkString Str | ...
+Primitives are defined for building these in SDLprims.
 
 > instance Compile Const where
 >     compile state (MkInt i) = mkint (int i)
@@ -57,6 +83,9 @@ The main compiler function, turns a logo program into an Epic term
 >     compile state (MkCol Cyan) = mkcol col_cyan
 >     compile state (MkCol Magenta) = mkcol col_magenta
 >     compile state (MkCol White) = mkcol col_white
+
+For turtle commands, we've also defined some primitives, so we just apply
+them to the current state and the given argument.
 
 > instance Compile Command where
 >     compile state (Fd i) = fn "forward" @@ state @@ compile state i

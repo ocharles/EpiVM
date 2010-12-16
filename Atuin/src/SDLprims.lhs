@@ -41,24 +41,24 @@ RGBA values.
 Constants - it's a dynamically typed language so we wrap them in an ADT
 which says what type they are.
 
-> mkint i = con_ 0 @@ i
-> mkstr s = con_ 1 @@ s
+> mkint i  = con_ 0 @@ i
+> mkstr s  = con_ 1 @@ s
 > mkchar c = con_ 2 @@ c
-> mkcol c = con_ 3 @@ c
+> mkcol c  = con_ 3 @@ c
 
 Every time we use a constant, we'll have to extract it from the wrapper.
 If we're asking for the wrong type, quit with an error.
 
-> getInt x = case_ x 
+> getInt x  = case_ x 
 >             [con 0 (\ (x :: Expr) -> x), defaultcase (error_ "Not an Int")]
 
-> getStr x = case_ x 
+> getStr x  = case_ x 
 >             [con 1 (\ (x :: Expr) -> x), defaultcase (error_ "Not a String")]
 
 > getChar x = case_ x 
 >             [con 2 (\ (x :: Expr) -> x), defaultcase (error_ "Not a Char")]
 
-> getCol x = case_ x 
+> getCol x  = case_ x 
 >             [con 3 (\ (x :: Expr) -> x), defaultcase (error_ "Not a Colour")]
 
 Arithmetic operations
@@ -67,6 +67,9 @@ Arithmetic operations
 > primMinus x y = mkint $ op_ Minus (getInt x) (getInt y)
 > primTimes x y = mkint $ op_ Times (getInt x) (getInt y)
 > primDivide x y = mkint $ op_ Divide (getInt x) (getInt y)
+
+Graphics primitive, just extracts the tuple of RGBA values for the colour
+and calls the SDL_gfx primitive.
 
 > drawLine :: Expr -> Expr -> Expr -> Expr -> Expr -> Expr -> Term
 > drawLine surf x y ex ey col
@@ -90,8 +93,13 @@ Here's some primitives to do the necessary conversions.
 > esin x = foreign_ tyFloat "sin" [(rad x, tyFloat)]
 > ecos x = foreign_ tyFloat "cos" [(rad x, tyFloat)]
 
-Create a new state with the turtle at the new position, and draw a line
-in the current colour between the two positions. Return the new state.
+Turtle functions.
+In these, the arguments given by the user is in the Value ADT, so we'll
+need to extract the integer.
+
+To move forward, create a new state with the turtle at the new position, 
+and draw a line in the current colour between the two positions. 
+Return the new state.
 
 > forward :: Expr -> Expr -> Term
 > forward st dist = case_ st 
@@ -106,7 +114,8 @@ in the current colour between the two positions. Return the new state.
 >                                    @@ x' @@ y' @@ col +>
 >                      tuple_ @@ surf @@ x' @@ y' @@ dir @@ col @@ pen)))]
 
-Create a new state with the turtle turned right. Return the new state.
+To turn right, create a new state with the turtle turned right. 
+Return the new state.
 
 > right :: Expr -> Expr -> Term
 > right st ang = case_ st
@@ -114,7 +123,8 @@ Create a new state with the turtle turned right. Return the new state.
 >             (dir :: Expr) (col :: Expr) (pen :: Expr) -> 
 >          (tuple_ @@ surf @@ x @@ y @@ op_ Minus dir (getInt ang) @@ col @@ pen))]
 
-Create a new state with the turtle turned left. Return the new state.
+To turn left, create a new state with the turtle turned left. 
+Return the new state.
 
 > left :: Expr -> Expr -> Term
 > left st ang = case_ st
@@ -126,9 +136,14 @@ Turtle state consists of an SDL surface,
 a position, a direction, a colour, and pen up/down:
 (surf, x, y, dir, col, bool)
 
+Note that we use primitives here, not the Value ADT, because we don't allow
+the user direct access to this tuple.
+
 > init_turtle surf = tuple_ @@ surf @@ 
 >                              int 320 @@ int 240 @@ int 180 @@ 
 >                              col_white @@ bool True
+
+Export the primitives as Epic functions.
 
 > sdlPrims = [(name "initSDL",     EpicFn initSDL),
 >             (name "pollEvent",   EpicFn pollEvent),
