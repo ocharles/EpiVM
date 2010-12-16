@@ -11,7 +11,8 @@ Synopsis:	Embedded Turtle language compiler in Haskell, with Epic output
 Description:    Epic is a simple functional language which compiles to
                 reasonably efficient C code. This language is a demonstration
                 of how to write a dynamically typed language with some system
-                interaction (specifically graphics).
+                interaction (specifically graphics). Requires SDL and 
+                SDL_gfx libraries, and their C headers.
 Data-files:     sdl/sdlrun.o sdl/sdlrun.h
 
 Cabal-Version:  >= 1.6

@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <SDL/SDL.h>
-//#include <SDL/SDL_gfxPrimitives.h>
+#include <SDL/SDL_gfxPrimitives.h>
 
 #include <closure.h>
 
@@ -23,7 +23,6 @@ SDL_Surface* graphicsInit(int xsize, int ysize) {
     return screen;
 }
 
-/*
 void filledRect(void *s_in,
 	        int x, int y, int w, int h,
 	        int r, int g, int b, int a) 
@@ -42,14 +41,12 @@ void filledEllipse(void* s_in,
     SDL_Surface* s = (SDL_Surface*)s_in;
     filledEllipseRGBA(s, x, y, rx, ry, r, g, b, a);
 }
-*/
 
 void drawLine(void* s_in,
 	      int x, int y, int ex, int ey,
 	      int r, int g, int b, int a) 
 {
     SDL_Surface* s = (SDL_Surface*)s_in;
-
     lineRGBA(s, x, y, ex, ey, r, g, b, a);
 }
 
@@ -61,8 +58,6 @@ void flipBuffers(void* s_in) {
 
 void* startSDL(int x, int y) {
     SDL_Surface *s = graphicsInit(x, y);
-//    drawRect(s, 100, 100, 50, 50, 255, 0, 0, 128);
-//    while(1) {
     return (void*)s;
 }
 
@@ -154,11 +149,3 @@ void* waitEvent()
     return (void*)(CONSTRUCTOR1(0, ievent)); // Just ievent
 }
 
-/*
-int main(int argc, char* argv[]) {
-    SDL_Surface *s = graphicsInit(640,480);
-    drawRect(s, 100, 100, 50, 50, 255, 0, 0, 128);
-    while(1) {
-    }
-}
-*/
