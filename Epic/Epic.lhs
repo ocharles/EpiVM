@@ -15,6 +15,7 @@
 >                  EpicExpr, term, EpicFn, Alternative,
 >                  Expr, Term, Name, name,
 >                  (@@), case_, con_, tuple_, con, tuple,
+>                  constcase, defaultcase,
 >                  if_, while_, whileAcc_, error_, op_,
 >                  lazy_, foreign_, foreignL_, foreignConst_, foreignConstL_,
 >                  let_, letN_, Op(..),
@@ -158,10 +159,10 @@ case alternatives
 > tuple e = mkAlt 0 e
 
 > -- | Case alternative for a constant
-> const :: EpicExpr a => Int -- ^ the constant
+> constcase :: EpicExpr a => Int -- ^ the constant
 >                        -> a -> State Int CaseAlt
-> const t a = do a' <- term a
->                return (ConstAlt t a')
+> constcase t a = do a' <- term a
+>                    return (ConstAlt t a')
 
 > -- | Default case if no other branches apply
 > defaultcase :: EpicExpr a => a -> State Int CaseAlt

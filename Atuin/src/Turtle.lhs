@@ -1,4 +1,4 @@
-> module LOGO where
+> module Turtle where
 
 > type Id = [String]
 > type Root = String
@@ -20,13 +20,13 @@
 > data Colour = Black | Red | Green | Blue | Yellow | Cyan | Magenta | White
 >   deriving Show
 
-> data LOGO = Call Id [Exp]
->           | Turtle Command
->           | Seq LOGO LOGO
->           | Let Id Exp LOGO
+> data Turtle = Call Id [Exp]
+>             | Turtle Command
+>             | Seq Turtle Turtle
+>             | Let Id Exp Turtle
 >   deriving Show
 
-> type Function = ([Id], LOGO)
+> type Function = ([Id], Turtle)
 
 > data Op = Plus | Minus | Times  | Divide      -- int ops
 >         | Eq   | LT    | LE     | GT     | GE -- bool ops  

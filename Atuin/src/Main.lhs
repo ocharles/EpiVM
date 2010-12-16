@@ -1,6 +1,6 @@
 > module Main where
 
-> import LOGO
+> import Turtle
 > import MkEpic
 
 > main :: IO ()

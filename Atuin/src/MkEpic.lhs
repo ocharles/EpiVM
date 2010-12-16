@@ -1,8 +1,8 @@
 > module MkEpic(output, testProg) where
 
-> import LOGO
+> import Turtle
 > import SDLprims
-> import Paths_elogo
+> import Paths_atuin
 
 > import Epic.Epic as Epic hiding (compile)
 
@@ -24,7 +24,7 @@ The main compiler function, turns a logo program into an Epic term
 > class Compile a where
 >     compile :: Expr -> a -> Term
 
-> instance Compile LOGO where
+> instance Compile Turtle where
 >     compile state (Seq x y) 
 >        = let_ (compile state x) (\state' -> compile state' y)
 >     compile state (Turtle c)  = compile state c
@@ -37,37 +37,39 @@ The main compiler function, turns a logo program into an Epic term
 
 > instance Compile Exp where
 >     compile state (Infix op l r) 
->         = op_ (mkOp op) (compile state l) (compile state r)
->         where mkOp LOGO.Plus = Epic.Plus
->               mkOp LOGO.Minus = Epic.Minus
->               mkOp LOGO.Times = Epic.Times
->               mkOp LOGO.Divide = Epic.Divide
+>         = (mkOp op) (compile state l) (compile state r)
+>         where mkOp Turtle.Plus = primPlus
+>               mkOp Turtle.Minus = primMinus
+>               mkOp Turtle.Times = primTimes
+>               mkOp Turtle.Divide = primDivide
 >     compile state (Var i) = ref (epicId i)
 >     compile state (Const i) = compile state i
 
 > instance Compile Const where
->     compile state (MkInt i) = int i
->     compile state (MkString s) = str s
->     compile state (MkChar c) = char c
->     compile state (MkCol Black) = col_black
->     compile state (MkCol Red) = col_red
->     compile state (MkCol Green) = col_green
->     compile state (MkCol Blue) = col_blue
->     compile state (MkCol Yellow) = col_yellow
->     compile state (MkCol Cyan) = col_cyan
->     compile state (MkCol Magenta) = col_magenta
->     compile state (MkCol White) = col_white
+>     compile state (MkInt i) = mkint (int i)
+>     compile state (MkString s) = mkstr (str s)
+>     compile state (MkChar c) = mkchar (char c)
+>     compile state (MkCol Black) = mkcol col_black
+>     compile state (MkCol Red) = mkcol col_red
+>     compile state (MkCol Green) = mkcol col_green
+>     compile state (MkCol Blue) = mkcol col_blue
+>     compile state (MkCol Yellow) = mkcol col_yellow
+>     compile state (MkCol Cyan) = mkcol col_cyan
+>     compile state (MkCol Magenta) = mkcol col_magenta
+>     compile state (MkCol White) = mkcol col_white
 
 > instance Compile Command where
->     compile state (Fd i) = forward state (compile state i)
->     compile state (Rt i) = right state (compile state i)
->     compile state (Lt i) = left state (compile state i)
+>     compile state (Fd i) = fn "forward" @@ state @@ compile state i
+>     compile state (Rt i) = fn "right"   @@ state @@ compile state i
+>     compile state (Lt i) = fn "left"    @@ state @@ compile state i
 
-Convert a function with arguments into an Epic definition.
+Convert a function with arguments into an Epic definition. We have the
+arguments in the definition, plus an additional state added by the system
+which carries the turtle state and SDL surface.
 
 > mkEpic :: (Id, Function) -> (Name, EpicDecl)
 > mkEpic (i, (args, p)) 
->            = (epicId i, EpicFn (\ state -> (map epicId args, compile state p)))
+>       = (epicId i, EpicFn (\ state -> (map epicId args, compile state p)))
 
 > _main = ([], Seq (Turtle (Fd (Const (MkInt 100))))
 >             (Seq (Turtle (Rt (Const (MkInt 90))))
@@ -78,7 +80,7 @@ Convert a function with arguments into an Epic definition.
 >        ([turn], Seq (Turtle (Fd (Const (MkInt 100))))
 >                (Seq (Turtle (Rt (Var turn)))
 >                (Seq (Turtle (Fd (Const (MkInt 100))))
->                (Seq (Turtle (Rt (Infix LOGO.Times (Const (MkInt 2)) (Var turn))))
+>                (Seq (Turtle (Rt (Infix Turtle.Times (Const (MkInt 2)) (Var turn))))
 >                     (Turtle (Fd (Const (MkInt 100))))))))
 
 > testProg :: [(Id, Function)]

@@ -2,7 +2,7 @@
 
 > module SDLprims where
 
-Epic primitives for calling SDL
+Epic primitives for calling SDL and basic operators
 
 > import Epic.Epic
 
@@ -16,9 +16,18 @@ Epic primitives for calling SDL
 > flipBuffers :: Expr -> Term
 > flipBuffers s = foreign_ tyUnit "flipBuffers" [(s, tyPtr)]
 
-Convert a colour into a tuple of the relevant RGBA values
+Define some colours, and convert a colour into a tuple of the relevant
+RGBA values.
 
-> rgba :: Expr -> Term
+> col_black   = con_ 0
+> col_red     = con_ 1
+> col_green   = con_ 2
+> col_blue    = con_ 3
+> col_yellow  = con_ 4
+> col_cyan    = con_ 5
+> col_magenta = con_ 6
+> col_white   = con_ 7
+
 > rgba col = case_ col 
 >              [con 0 (tuple_ @@ int 0 @@ int 0 @@ int 0 @@ int 255),
 >               con 1 (tuple_ @@ int 255 @@ int 0 @@ int 0 @@ int 255),
@@ -29,26 +38,46 @@ Convert a colour into a tuple of the relevant RGBA values
 >               con 6 (tuple_ @@ int 255 @@ int 0 @@ int 255 @@ int 255),
 >               con 7 (tuple_ @@ int 255 @@ int 255 @@ int 255 @@ int 255)]
 
-> drawLine :: Expr -> -- surface
->             Expr -> Expr -> Expr -> Expr -> -- x, y, endx, endy
->             Expr -> -- colour
->             Term
+Constants - it's a dynamically typed language so we wrap them in an ADT
+which says what type they are.
+
+> mkint i = con_ 0 @@ i
+> mkstr s = con_ 1 @@ s
+> mkchar c = con_ 2 @@ c
+> mkcol c = con_ 3 @@ c
+
+Every time we use a constant, we'll have to extract it from the wrapper.
+If we're asking for the wrong type, quit with an error.
+
+> getInt x = case_ x 
+>             [con 0 (\ (x :: Expr) -> x), defaultcase (error_ "Not an Int")]
+
+> getStr x = case_ x 
+>             [con 1 (\ (x :: Expr) -> x), defaultcase (error_ "Not a String")]
+
+> getChar x = case_ x 
+>             [con 2 (\ (x :: Expr) -> x), defaultcase (error_ "Not a Char")]
+
+> getCol x = case_ x 
+>             [con 3 (\ (x :: Expr) -> x), defaultcase (error_ "Not a Colour")]
+
+Arithmetic operations
+
+> primPlus x y = mkint $ op_ Plus (getInt x) (getInt y)
+> primMinus x y = mkint $ op_ Minus (getInt x) (getInt y)
+> primTimes x y = mkint $ op_ Times (getInt x) (getInt y)
+> primDivide x y = mkint $ op_ Divide (getInt x) (getInt y)
+
+> drawLine :: Expr -> Expr -> Expr -> Expr -> Expr -> Expr -> Term
 > drawLine surf x y ex ey col
 >          = case_ (rgba col)
 >              [tuple (\ r g b a ->
 >                 foreign_ tyUnit "drawLine" 
 >                   [(surf, tyPtr),
->                    (x, tyInt), (y, tyInt), (ex, tyInt), (ey, tyInt),
->                    (r, tyInt), (g, tyInt), (b, tyInt), (a, tyInt)]) ]
-
-> col_black   = con_ 0
-> col_red     = con_ 1
-> col_green   = con_ 2
-> col_blue    = con_ 3
-> col_yellow  = con_ 4
-> col_cyan    = con_ 5
-> col_magenta = con_ 6
-> col_white   = con_ 7
+>                    (x, tyInt), (y, tyInt), 
+>                    (ex, tyInt), (ey, tyInt),
+>                    (r, tyInt), (g, tyInt), 
+>                    (b, tyInt), (a, tyInt)]) ]
 
 We have integers and degrees, but sin and cos work with floats and radians.
 Here's some primitives to do the necessary conversions.
@@ -64,30 +93,34 @@ Here's some primitives to do the necessary conversions.
 Create a new state with the turtle at the new position, and draw a line
 in the current colour between the two positions. Return the new state.
 
+> forward :: Expr -> Expr -> Term
 > forward st dist = case_ st 
 >   [tuple (\ (surf :: Expr) (x :: Expr) (y :: Expr) 
 >             (dir :: Expr) (col :: Expr) (pen :: Expr) -> 
->              let_ (op_ Plus x (floatToInt (op_ FTimes (intToFloat dist)
+>              let_ (op_ Plus x (floatToInt (op_ FTimes (intToFloat (getInt dist))
 >                                                        (esin dir))))
 >              (\x' -> let_ (op_ Plus y (floatToInt 
->                                            (op_ FTimes (intToFloat dist)
+>                                            (op_ FTimes (intToFloat (getInt dist))
 >                                                        (ecos dir))))
->              (\y' -> drawLine surf x y x' y' col +>
+>              (\y' -> fn "drawLine" @@ surf @@ x @@ y 
+>                                    @@ x' @@ y' @@ col +>
 >                      tuple_ @@ surf @@ x' @@ y' @@ dir @@ col @@ pen)))]
 
 Create a new state with the turtle turned right. Return the new state.
 
+> right :: Expr -> Expr -> Term
 > right st ang = case_ st
 >   [tuple (\ (surf :: Expr) (x :: Expr) (y :: Expr) 
 >             (dir :: Expr) (col :: Expr) (pen :: Expr) -> 
->          (tuple_ @@ surf @@ x @@ y @@ (op_ Minus dir ang) @@ col @@ pen))]
+>          (tuple_ @@ surf @@ x @@ y @@ op_ Minus dir (getInt ang) @@ col @@ pen))]
 
 Create a new state with the turtle turned left. Return the new state.
 
+> left :: Expr -> Expr -> Term
 > left st ang = case_ st
 >   [tuple (\ (surf :: Expr) (x :: Expr) (y :: Expr) 
 >             (dir :: Expr) (col :: Expr) (pen :: Expr) -> 
->          (tuple_ @@ surf @@ x @@ y @@ (op_ Plus dir ang) @@ col @@ pen))]
+>          (tuple_ @@ surf @@ x @@ y @@ op_ Plus dir (getInt ang) @@ col @@ pen))]
 
 Turtle state consists of an SDL surface,
 a position, a direction, a colour, and pen up/down:
@@ -101,4 +134,7 @@ a position, a direction, a colour, and pen up/down:
 >             (name "pollEvent",   EpicFn pollEvent),
 >             (name "flipBuffers", EpicFn flipBuffers),
 >             (name "drawLine",    EpicFn drawLine),
+>             (name "forward",     EpicFn forward),
+>             (name "left",        EpicFn left),
+>             (name "right",       EpicFn right),
 >             (name "pressAnyKey", EpicFn pressAnyKey)]
