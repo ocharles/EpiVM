@@ -17,9 +17,10 @@
 >                  (@@), case_, con_, tuple_, con, tuple,
 >                  constcase, defaultcase,
 >                  if_, while_, whileAcc_, error_, op_,
->                  lazy_, foreign_, foreignL_, foreignConst_, foreignConstL_,
+>                  lazy_, effect_,
+>                  foreign_, foreignL_, foreignConst_, foreignConstL_,
 >                  let_, letN_, Op(..),
->                  str, int, float, char, bool, (!.), fn, ref, (+>),
+>                  str, int, float, char, bool, unit_, (!.), fn, ref, (+>),
 >                  -- * Types
 >                  Type, tyInt, tyChar, tyBool, tyFloat, tyString,
 >                  tyPtr, tyUnit, tyAny, tyC, 
@@ -216,6 +217,11 @@ Remaining expression constructs
 > lazy_ :: (EpicExpr a) => a -> Term
 > lazy_ = exp1 Lazy
 
+> -- | Evaluate an expression but don't update the closure with the result.
+> -- | Use this if the expression has a side effect.
+> effect_ :: (EpicExpr a) => a -> Term
+> effect_ = exp1 Effect
+
 > termF (x,y) = do x' <-term x
 >                  return (x', y)
 
@@ -306,6 +312,9 @@ Remaining expression constructs
 > -- | Constant bool
 > bool :: Bool -> Term
 > bool b = term $ Const (MkBool b)
+
+> -- | Constructor for the unit type
+> unit_ = con_ 0
 
 > infixl 1 +>
 

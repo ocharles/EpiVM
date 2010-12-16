@@ -50,6 +50,18 @@ When applying a function we need to add the state as the first argument.
 >        where app f [] = f
 >              app f (e:es) = app (f @@ compile state e) es
 
+>     compile state (If a t e) = if_ (getBool (compile state a))
+>                                    (compile state t) (compile state e)
+
+To repeat an action n times, call the "repeat" function. The action itself
+is parameterised over a state becaue it'll have a different state at each
+step of the loop. It's really handy to be able to use a Haskell function
+here! 
+
+>     compile state (Repeat n e) = fn "repeat" @@ state 
+>                                              @@ compile state n
+>                                              @@ (\st -> compile st e)
+
 >     compile state (Let i e scope) 
 >         = letN_ (epicId i) (compile state e) (compile state scope)
 
@@ -64,6 +76,11 @@ in SDLprims do this for us.
 >               mkOp Turtle.Minus = primMinus
 >               mkOp Turtle.Times = primTimes
 >               mkOp Turtle.Divide = primDivide
+>               mkOp Turtle.Eq = primEq
+>               mkOp Turtle.LT = primLT
+>               mkOp Turtle.LE = primLE
+>               mkOp Turtle.GT = primGT
+>               mkOp Turtle.GE = primGE
 >     compile state (Var i) = ref (epicId i)
 >     compile state (Const i) = compile state i
 
@@ -75,6 +92,7 @@ Primitives are defined for building these in SDLprims.
 >     compile state (MkInt i) = mkint (int i)
 >     compile state (MkString s) = mkstr (str s)
 >     compile state (MkChar c) = mkchar (char c)
+>     compile state (MkBool b) = mkbool (bool b)
 >     compile state (MkCol Black) = mkcol col_black
 >     compile state (MkCol Red) = mkcol col_red
 >     compile state (MkCol Green) = mkcol col_green
@@ -88,9 +106,12 @@ For turtle commands, we've also defined some primitives, so we just apply
 them to the current state and the given argument.
 
 > instance Compile Command where
->     compile state (Fd i) = fn "forward" @@ state @@ compile state i
->     compile state (Rt i) = fn "right"   @@ state @@ compile state i
->     compile state (Lt i) = fn "left"    @@ state @@ compile state i
+>     compile state (Fd i)     = fn "forward" @@ state @@ compile state i
+>     compile state (Rt i)     = fn "right"   @@ state @@ compile state i
+>     compile state (Lt i)     = fn "left"    @@ state @@ compile state i
+>     compile state (Colour c) = fn "colour"  @@ state @@ compile state c
+>     compile state PenUp      = fn "pen"     @@ state @@ bool False
+>     compile state PenDown    = fn "pen"     @@ state @@ bool True
 
 Convert a function with arguments into an Epic definition. We have the
 arguments in the definition, plus an additional state added by the system
@@ -100,9 +121,19 @@ which carries the turtle state and SDL surface.
 > mkEpic (i, (args, p)) 
 >       = (epicId i, EpicFn (\ state -> (map epicId args, compile state p)))
 
-> _main = ([], Seq (Turtle (Fd (Const (MkInt 100))))
->             (Seq (Turtle (Rt (Const (MkInt 90))))
->                  (Call (mkId "lines") [Const (MkInt 30)])))
+> _main = ([], (Seq (Call (mkId "square") [Const (MkCol Red), 
+>                                          Const (MkInt 100)])
+>              (Seq (Turtle PenUp)
+>              (Seq (Turtle (Rt (Const (MkInt 90))))
+>              (Seq (Turtle (Fd (Const (MkInt 200))))
+>              (Seq (Turtle (Lt (Const (MkInt 90))))
+>              (Seq (Turtle PenDown)
+>                   (Call (mkId "square") [Const (MkCol Blue),
+>                                          Const (MkInt 100)]))))))))
+
+Seq (Turtle (Fd (Const (MkInt 100))))
+             (Seq (Turtle (Rt (Const (MkInt 90))))
+                  
 
 > _lines 
 >  = let turn = mkId "turn" in
@@ -112,9 +143,20 @@ which carries the turtle state and SDL surface.
 >                (Seq (Turtle (Rt (Infix Turtle.Times (Const (MkInt 2)) (Var turn))))
 >                     (Turtle (Fd (Const (MkInt 100))))))))
 
+> _square = let col = mkId "col"
+>               len = mkId "len" in
+>           ([col, len], 
+>                    If (Infix Turtle.LT (Var len) (Const (MkInt 200)))
+>                   (Seq (Turtle (Colour (Var col)))
+>                        (Repeat (Const (MkInt 4))
+>                         (Seq (Turtle (Fd (Var len)))
+>                         (Turtle (Rt (Const (MkInt 90)))))))
+>                   (Turtle (Fd (Var len))))
+
 > testProg :: [(Id, Function)]
 > testProg = [(mkId "main",  _main), 
->             (mkId "lines", _lines)]
+>             (mkId "lines", _lines),
+>             (mkId "square", _square)]
 
 Epic main program - initialises SDL, sets up an initial turtle state,
 runs the program called "main" and waits for a key press.
