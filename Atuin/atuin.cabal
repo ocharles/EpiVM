@@ -21,5 +21,6 @@ Build-type:     Custom
 Executable     atuin
                Main-is: Main.lhs
                hs-source-dirs: src
-               Other-modules: Turtle MkEpic SDLprims Paths_atuin
-               Build-depends: base >=4 && <5, haskell98, Cabal, directory, epic
+               Other-modules: Turtle MkEpic SDLprims Lexer Parser Paths_atuin
+               Build-depends: base >=4 && <5, haskell98, Cabal, array,
+                              directory, epic

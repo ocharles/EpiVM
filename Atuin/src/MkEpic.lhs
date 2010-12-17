@@ -64,6 +64,7 @@ here!
 
 >     compile state (Let i e scope) 
 >         = letN_ (epicId i) (compile state e) (compile state scope)
+>     compile state Pass = unit_
 
 It's a dynamically typed language, so when we compute an expression we
 need to check the values are the right type at each step. The primitives

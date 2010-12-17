@@ -1,0 +1,29 @@
+square(size, col) {
+  colour col
+  repeat 4 {
+     forward size
+     right 90
+  }
+}
+
+polygon(sides, size, col) {
+  if sides > 2 {
+    colour col
+    angle = 360/sides
+    repeat sides {
+      forward size
+      right angle
+    }
+  }
+}
+
+main() {
+   x = 100
+   square(x, blue)
+   penup
+   left 90
+   forward 200
+   right 90
+   pendown
+   polygon(30, 25, red)
+}

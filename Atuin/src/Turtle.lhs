@@ -19,7 +19,7 @@
 >   deriving Show
 
 > data Colour = Black | Red | Green | Blue | Yellow | Cyan | Magenta | White
->   deriving Show
+>   deriving (Show, Eq)
 
 > data Turtle = Call Id [Exp]
 >             | Turtle Command
@@ -27,6 +27,7 @@
 >             | If Exp Turtle Turtle
 >             | Repeat Exp Turtle
 >             | Let Id Exp Turtle
+>             | Pass
 >   deriving Show
 
 > type Function = ([Id], Turtle)
