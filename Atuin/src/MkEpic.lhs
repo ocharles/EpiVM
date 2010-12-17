@@ -1,15 +1,15 @@
-> module MkEpic(output, testProg) where
+> module MkEpic(output) where
 
 Convert a Turtle program into an Epic program
 
 > import Turtle
 > import SDLprims
+> import SDLflags
 > import Paths_atuin
 
 > import Epic.Epic as Epic hiding (compile)
 
-> opts = [GCCOpt "-lSDLmain -lsdl -lsdl_gfx -Wl,-framework,Cocoa",
->         MainInc "SDL/SDL.h"]
+> opts = [GCCOpt sdlflags, MainInc "SDL/SDL.h"]
 
 Epic takes Strings as identifiers, so we'll need to convert our identifiers
 to strings...
@@ -131,43 +131,6 @@ which carries the turtle state and SDL surface.
 > mkEpic :: (Id, Function) -> (Name, EpicDecl)
 > mkEpic (i, (args, p)) 
 >       = (epicId i, EpicFn (\ state -> (map epicId args, compile state p)))
-
-> _main = ([], (Seq (Call (mkId "square") [Const (MkCol Red), 
->                                          Const (MkInt 100)])
->              (Seq (Turtle PenUp)
->              (Seq (Turtle (Rt (Const (MkInt 90))))
->              (Seq (Turtle (Fd (Const (MkInt 200))))
->              (Seq (Turtle (Lt (Const (MkInt 90))))
->              (Seq (Turtle PenDown)
->                   (Call (mkId "square") [Const (MkCol Blue),
->                                          Const (MkInt 100)]))))))))
-
-Seq (Turtle (Fd (Const (MkInt 100))))
-             (Seq (Turtle (Rt (Const (MkInt 90))))
-                  
-
-> _lines 
->  = let turn = mkId "turn" in
->        ([turn], Seq (Turtle (Fd (Const (MkInt 100))))
->                (Seq (Turtle (Rt (Var turn)))
->                (Seq (Turtle (Fd (Const (MkInt 100))))
->                (Seq (Turtle (Rt (Infix Turtle.Times (Const (MkInt 2)) (Var turn))))
->                     (Turtle (Fd (Const (MkInt 100))))))))
-
-> _square = let col = mkId "col"
->               len = mkId "len" in
->           ([col, len], 
->                    If (Infix Turtle.LT (Var len) (Const (MkInt 200)))
->                   (Seq (Turtle (Colour (Var col)))
->                        (Repeat (Const (MkInt 4))
->                         (Seq (Turtle (Fd (Var len)))
->                         (Turtle (Rt (Const (MkInt 90)))))))
->                   (Turtle (Fd (Var len))))
-
-> testProg :: [(Id, Function)]
-> testProg = [(mkId "main",  _main), 
->             (mkId "lines", _lines),
->             (mkId "square", _square)]
 
 Epic main program - initialises SDL, sets up an initial turtle state,
 runs the program called "main" and waits for a key press.

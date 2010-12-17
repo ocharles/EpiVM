@@ -13,6 +13,7 @@ Description:    This language is a demonstration of the Epic compiler API.
 		functions and system interaction (specifically graphics). 
                 Requires SDL and SDL_gfx libraries, and their C headers.
 Data-files:     sdl/sdlrun.o sdl/sdlrun.h
+Extra-source-files: sdl/Makefile sdl/sdlrun.c sdl/sdlrun.h src/Makefile
 
 Cabal-Version:  >= 1.6
 Build-type:     Custom

@@ -14,6 +14,10 @@ system' cmd = do
 buildLib args flags desc local 
     = system' "make -C sdl"
 
+findSDL args flags
+    = do system' "make -C src SDLflags.hs"
+         return emptyHookedBuildInfo
+
 -- This is a hack. I don't know how to tell cabal that a data file needs
 -- installing but shouldn't be in the distribution. And it won't make the
 -- distribution if it's not there, so instead I just delete
@@ -28,7 +32,8 @@ postInstLib args flags desc local
     = do let pfx = prefix (installDirTemplates local)
          system' $ "make -C sdl install PREFIX=" ++ show pfx
 
-main = defaultMainWithHooks (simpleUserHooks { postBuild = buildLib,
+main = defaultMainWithHooks (simpleUserHooks { preBuild = findSDL,
+                                               postBuild = buildLib,
                                                postConf = postConfLib,
                                                postInst = postInstLib })
 
