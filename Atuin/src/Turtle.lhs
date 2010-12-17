@@ -9,6 +9,7 @@
 > data Exp = Infix Op Exp Exp
 >          | Var Id
 >          | Const Const
+>          | Block Turtle
 >   deriving Show
 
 > data Const = MkInt Int
@@ -27,6 +28,7 @@
 >             | If Exp Turtle Turtle
 >             | Repeat Exp Turtle
 >             | Let Id Exp Turtle
+>             | Eval Exp
 >             | Pass
 >   deriving Show
 

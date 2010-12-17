@@ -46,6 +46,7 @@ import Lexer
       '>'             { TokenGT }
       ';'             { TokenSemi }
       ','             { TokenComma }
+      eval            { TokenEval }
       forward         { TokenFD }
       right           { TokenRight }
       left            { TokenLeft }
@@ -88,6 +89,7 @@ Turtle :: { Turtle }
 Turtle : name '(' ExprList ')' { Call $1 $3 }
        | if Expr Block ElseBlock
                { If $2 $3 $4 }
+       | eval Expr { Eval $2 }
        | repeat Expr Block { Repeat $2 $3 }
        | forward Expr { Turtle (Fd $2) }
        | right Expr { Turtle (Rt $2) }
@@ -118,6 +120,7 @@ Expr : name { Var $1 }
      | Expr le Expr  { Infix LE $1 $3 }
      | Expr ge Expr  { Infix GE $1 $3 }
      | '(' Expr ')'  { $2 }
+     | '{' TurtleProg '}' { Block $2 }
 
 Constant :: { Const }
 Constant : int    { MkInt $1 }

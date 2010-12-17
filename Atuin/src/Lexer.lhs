@@ -75,6 +75,7 @@
 >       | TokenSemi
 >       | TokenComma
 >       | TokenMkCol Colour
+>       | TokenEval
 >       | TokenFD
 >       | TokenRight
 >       | TokenLeft
@@ -160,6 +161,7 @@
 >       ("else",rest) -> cont TokenElse rest
 >       ("repeat",rest) -> cont TokenRepeat rest
 >       ("in",rest) -> cont TokenIn rest
+>       ("eval",rest) -> cont TokenEval rest
 > -- commands
 >       ("forward",rest) -> cont TokenFD rest
 >       ("right",rest) -> cont TokenRight rest

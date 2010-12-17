@@ -6,14 +6,21 @@ square(size, col) {
   }
 }
 
+myrepeat(num, block) {
+  if num > 0 {
+     eval block
+     myrepeat(num-1, block)
+  }
+}
+
 polygon(sides, size, col) {
   if sides > 2 {
     colour col
     angle = 360/sides
-    repeat sides {
+    myrepeat(sides, {
       forward size
       right angle
-    }
+    })
   }
 }
 
@@ -25,5 +32,5 @@ main() {
    forward 200
    right 90
    pendown
-   polygon(30, 25, red)
+   polygon(10, 25, red)
 }

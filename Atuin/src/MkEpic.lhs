@@ -64,6 +64,10 @@ here!
 
 >     compile state (Let i e scope) 
 >         = letN_ (epicId i) (compile state e) (compile state scope)
+
+The delayed expression expects to be passed the current state.
+
+>     compile state (Eval e) = effect_ (compile state e @@ state)
 >     compile state Pass = unit_
 
 It's a dynamically typed language, so when we compute an expression we
@@ -84,6 +88,11 @@ in SDLprims do this for us.
 >               mkOp Turtle.GE = primGE
 >     compile state (Var i) = ref (epicId i)
 >     compile state (Const i) = compile state i
+
+When we evaluate the block, we want to use the state when run, not the
+state when built.
+
+>     compile state (Block t) = lazy_ (\st -> compile st t)
 
 Values are wrapped in an ADT so we can see what type they are.
 i.e. data Value = MkInt Int | MkString Str | ...
