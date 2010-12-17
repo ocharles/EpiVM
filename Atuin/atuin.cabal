@@ -8,11 +8,10 @@ Homepage:	http://www.dcs.st-and.ac.uk/~eb/epic.php
 Stability:	experimental
 Category:       Compilers/Interpreters
 Synopsis:	Embedded Turtle language compiler in Haskell, with Epic output
-Description:    Epic is a simple functional language which compiles to
-                reasonably efficient C code. This language is a demonstration
-                of how to write a dynamically typed language with some system
-                interaction (specifically graphics). Requires SDL and 
-                SDL_gfx libraries, and their C headers.
+Description:    This language is a demonstration of the Epic compiler API.
+                It is a dynamically typed language with higher order
+		functions and system interaction (specifically graphics). 
+                Requires SDL and SDL_gfx libraries, and their C headers.
 Data-files:     sdl/sdlrun.o sdl/sdlrun.h
 
 Cabal-Version:  >= 1.6

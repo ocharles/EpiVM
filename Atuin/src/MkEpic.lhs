@@ -65,7 +65,7 @@ here!
 >     compile state (Let i e scope) 
 >         = letN_ (epicId i) (compile state e) (compile state scope)
 
-The delayed expression expects to be passed the current state.
+To evaluate a delayed expression, pass it the current state.
 
 >     compile state (Eval e) = effect_ (compile state e @@ state)
 >     compile state Pass = unit_
@@ -89,8 +89,9 @@ in SDLprims do this for us.
 >     compile state (Var i) = ref (epicId i)
 >     compile state (Const i) = compile state i
 
-When we evaluate the block, we want to use the state when run, not the
-state when built.
+Delay evaluation of a code block. When we get around to evaluating it,
+we'll want to use the state at that point, not the state when the block is
+built, so make this a function.
 
 >     compile state (Block t) = lazy_ (\st -> compile st t)
 
