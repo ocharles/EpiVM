@@ -1,0 +1,13 @@
+\section{Introduction}
+
+Lots of backends for functional languages,
+e.g. STG~\cite{evalpush,stg,llvm-haskell}, ABC~\cite{abc-machine}.
+But they aren't simple enough that they are easy to bolt on to a new
+language. Either too low level, or an interface isn't exposed, or
+where an interface is exposed, there are constraints on the type
+system. So things like Agda~\cite{norell-thesis} have resorted to
+generating Haskell with unsafeCoerce.
+
+Epic originally written for Epigram~\cite{levitation} (the name is
+short for ``\textbf{Epi}gram \textbf{C}ompiler''). Now used by
+Idris~\cite{idris-plpv}, also as an experimental back end for Agda.

@@ -1,0 +1,97 @@
+\section{The Epic Language}
+
+\subsection{Definitions}
+
+\newcommand{\Con}[2]{\DC{Con}\:#1(#2)}
+
+\FFIG{
+\AR{
+\begin{array}{rcll}
+\vt & ::= & \vx & \mbox{(Variable)} \\
+& \mid &  \vt(\ttt) & \mbox{(Function application)} \\
+& \mid & \lam{\vx}{\vT}\SC\vt & \mbox{(Lambda binding)} \\
+& \mid & \RW{let}\:\vx\Hab\vT\:=\:\vt\:\RW{in}\:\vt & \mbox{(Let
+  binding)} \\
+& \mid & \Con{\vi}{\ttt} & \mbox{(Constructor application)} \\
+& \mid & \vt ! \vi & \mbox{(Argument projection)} \\
+& \mid & \vt\:\VV{op}\:\vt & \mbox{(Infix operator)} \\
+& \mid & \RW{if}\:\vt\:\RW{then}\:\vt\:\RW{else}\:\vt & \mbox{(Conditional)}\\
+& \mid & \RW{while}(\vt,\vt) & \mbox{(While loops)} \\
+& \mid & \RW{case}\:\vt\:\RW{of}\:\vec{\VV{alt}} & \mbox{(Case expressions)}\\
+& \mid & \RW{lazy}(\vt) & \mbox{(Lazy evaluation)} \\
+& \mid & \RW{foreign}\:\vT\:\VV{str}\:\vec{(\vt\Hab\vT)} & \mbox{(Foreign call)} \\
+& \mid & \vi \mid \vf \mid \vc \mid \vb \mid \VV{str} & \mbox{(Constants)} \\
+\end{array}
+\medskip
+\\
+\begin{array}{rcll}
+\VV{alt} & ::= &
+\Con{\vi}{\tx} \cq \vt & \mbox{(Constructors)}\\
+& \mid & \vi \cq \vt & \mbox{(Integer constants)} \\
+& \mid & \RW{default} \cq \vt & \mbox{(Match anything)} \\
+\end{array}
+\medskip
+\\
+\begin{array}{rcll}
+\VV{op} & ::= & + \mid - \mid \times \mid / \mid\:
+==\: \mid \:<\: \mid \:\le\: \mid \:>\: \mid \:\ge \\
+\end{array}
+\medskip
+\\
+\begin{array}{rcll}
+\vT & ::= & \TC{Int} \mid \TC{Char} \mid \TC{Bool} \mid \TC{Float}
+\mid \TC{String} & \mbox{(Primitives)} \\
+ & \mid & \TC{Unit} & \mbox{(Unit type)} \\
+ & \mid & \TC{Ptr} & \mbox{(Foreign pointers)} \\
+ & \mid & \TC{Fun} & \mbox{(Any function type)} \\
+ & \mid & \TC{Data} & \mbox{(Any data type)} \\
+ & \mid & \TC{Any} & \mbox{(Unchecked polymorphic type)} \\
+\end{array}
+\medskip
+\\
+\begin{array}{rcll}
+\vx & ::= & \mbox{Variable name} \\
+\vi & ::= & \mbox{Integer literal} \\
+\vf & ::= & \mbox{Floating point literal} \\
+\vc & ::= & \mbox{Character literal} \\
+\vb & ::= & \mbox{Boolean literal} \: \DC{True} \mid \DC{False} \\
+\VV{str} & ::= & \mbox{String literal} \\
+\end{array}
+\medskip
+\\
+\begin{array}{rcll}
+\VV{def} & ::= & \vx\vec{(\vx\Hab\vT)} \rightarrow \vT = \vt & \mbox{(Top level definition)}
+\end{array}
+}
+}
+{Epic syntax}
+{epicsyn}
+
+BNF in Figure \ref{epicsyn}. Expressions. \texttt{let}, \texttt{case},
+\texttt{lazy}, \texttt{while}
+
+\subsection{Types}
+
+\texttt{Int}, \texttt{Float}, \texttt{Bool}, \texttt{Data}, \texttt{Ptr},
+\texttt{Unit}. Unchecked! Used for marshalling foreign functions only.
+
+Run-time representation (31 bit ints).
+
+\subsection{Foreign Functions}
+
+Calling, exporting.
+
+\subsection{Implementation}
+
+How it's implemented is not really important --- a compiler can target
+Epic without knowing. There is currently one back end, but more are
+planned. Compiled via C. Garbage collection with
+Boehm~\cite{boehm-gc}, \texttt{\%memory}.
+
+Later plans: compile via LLVM, allow plug in garbage collectors
+(important for embedded systems, device drivers, operating system
+services, for example).
+
+\subsection{Haskell API}
+
+(Give HOAS translation as an example)
