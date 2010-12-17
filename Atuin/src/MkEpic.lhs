@@ -9,7 +9,7 @@ Convert a Turtle program into an Epic program
 
 > import Epic.Epic as Epic hiding (compile)
 
-> opts = [GCCOpt sdlflags, MainInc "SDL/SDL.h"]
+> opts = [GCCOpt (sdlflags ++ " -l SDL_gfx"), MainInc "SDL/SDL.h"]
 
 Epic takes Strings as identifiers, so we'll need to convert our identifiers
 to strings...
