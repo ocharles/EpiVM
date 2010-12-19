@@ -21,7 +21,7 @@
 & \mid & \RW{if}\:\vt\:\RW{then}\:\vt\:\RW{else}\:\vt & \mbox{(Conditional)}\\
 & \mid & \RW{case}\:\vt\:\RW{of}\:\vec{\VV{alt}} & \mbox{(Case expressions)}\\
 & \mid & \RW{lazy}(\vt) & \mbox{(Lazy evaluation)} \\
-& \mid & \RW{effect}(\vt) & \mbox{(Evaluate an effectful evaluation)} \\
+& \mid & \RW{effect}(\vt) & \mbox{(Evaluate an effectful term)} \\
 & \mid & \RW{while}(\vt,\vt) & \mbox{(While loops)} \\
 & \mid & \RW{foreign}\:\vT\:\VV{str}\:\vec{(\vt\Hab\vT)} & \mbox{(Foreign call)} \\
 & \mid & \vi \mid \vf \mid \vc \mid \vb \mid \VV{str} & \mbox{(Constants)} \\
@@ -56,7 +56,7 @@
  & \mid & \TC{Ptr} & \mbox{(Foreign pointers)} \\
  & \mid & \TC{Fun} & \mbox{(Any function type)} \\
  & \mid & \TC{Data} & \mbox{(Any data type)} \\
- & \mid & \TC{Any} & \mbox{(Unchecked polymorphic type)} \\
+ & \mid & \TC{Any} & \mbox{(Polymorphic type)} \\
 \end{array}
 }
 }

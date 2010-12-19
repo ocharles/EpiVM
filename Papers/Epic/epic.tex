@@ -1,4 +1,4 @@
-\documentclass{article}
+\documentclass[preprint]{sigplanconf}
 %\documentclass[orivec,dvips,10pt]{llncs}
 
 \usepackage[draft]{comments}
@@ -49,17 +49,36 @@
 
 \begin{document}
 
-\title{Epic --- a Generic Functional Compiler}
-\author{Edwin Brady}
+\title{Epic --- a Generic Back End for Functional Programming Languages}
+%\author{Edwin Brady}
+
+\authorinfo{Edwin C. Brady}
+{School of Computer Science, 
+University of St Andrews, St Andrews, Scotland.}
+{Email: eb@cs.st-andrews.ac.uk}
+
 
 \maketitle
 
 \begin{abstract}
-Epic is a minimal, compiled functional language, intended as a
-flexible target language for high level functional languages. It is
-independent of the source language's type system, supports eager or
-lazy evaluation, and has a range of primitive types and a lightweight
-foreign function interface.
+Compilers for functional languages, whether strict or non-strict,
+typed or untyped, need to handle many of the same problems, for
+example thunks, lambda lifting, optimisation, garbage collection, and
+system interaction.  Although implementation techniques are by now
+well understood, it remains difficult for a new functional language to
+exploit these techniques without either implementing a compiler from
+scratch, or attempting fit the new language around another existing
+compiler.
+
+Epic is a compiled functional language which exposes functional
+compilation techniques to a language implementor. It has both a
+concrete syntax and a Haskell API. It is independent of a source
+language's type system and semantics, supports eager or lazy
+evaluation, and has a range of primitive types and a lightweight
+foreign function interface. In this paper we describe Epic and
+demonstrate its flexibility by applying it to two very different
+functional languages: a dynamically typed turtle graphics language and
+a dependently typed lambda calculus.
 
 \end{abstract}
 
