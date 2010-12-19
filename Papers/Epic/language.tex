@@ -6,7 +6,10 @@
 
 \FFIG{
 \AR{
-\begin{array}{rcll}
+\begin{array}{rcll}\\
+\VV{def} & ::= & \vx\vec{(\vx\Hab\vT)} \rightarrow \vT = \vt &
+\mbox{(Top level definition)} \\
+\\
 \vt & ::= & \vx & \mbox{(Variable)} \\
 & \mid &  \vt(\ttt) & \mbox{(Function application)} \\
 & \mid & \lam{\vx}{\vT}\SC\vt & \mbox{(Lambda binding)} \\
@@ -16,15 +19,13 @@
 & \mid & \vt ! \vi & \mbox{(Argument projection)} \\
 & \mid & \vt\:\VV{op}\:\vt & \mbox{(Infix operator)} \\
 & \mid & \RW{if}\:\vt\:\RW{then}\:\vt\:\RW{else}\:\vt & \mbox{(Conditional)}\\
-& \mid & \RW{while}(\vt,\vt) & \mbox{(While loops)} \\
 & \mid & \RW{case}\:\vt\:\RW{of}\:\vec{\VV{alt}} & \mbox{(Case expressions)}\\
 & \mid & \RW{lazy}(\vt) & \mbox{(Lazy evaluation)} \\
+& \mid & \RW{effect}(\vt) & \mbox{(Evaluate an effectful evaluation)} \\
+& \mid & \RW{while}(\vt,\vt) & \mbox{(While loops)} \\
 & \mid & \RW{foreign}\:\vT\:\VV{str}\:\vec{(\vt\Hab\vT)} & \mbox{(Foreign call)} \\
 & \mid & \vi \mid \vf \mid \vc \mid \vb \mid \VV{str} & \mbox{(Constants)} \\
-\end{array}
-\medskip
 \\
-\begin{array}{rcll}
 \VV{alt} & ::= &
 \Con{\vi}{\tx} \cq \vt & \mbox{(Constructors)}\\
 & \mid & \vi \cq \vt & \mbox{(Integer constants)} \\
@@ -39,17 +40,6 @@
 \medskip
 \\
 \begin{array}{rcll}
-\vT & ::= & \TC{Int} \mid \TC{Char} \mid \TC{Bool} \mid \TC{Float}
-\mid \TC{String} & \mbox{(Primitives)} \\
- & \mid & \TC{Unit} & \mbox{(Unit type)} \\
- & \mid & \TC{Ptr} & \mbox{(Foreign pointers)} \\
- & \mid & \TC{Fun} & \mbox{(Any function type)} \\
- & \mid & \TC{Data} & \mbox{(Any data type)} \\
- & \mid & \TC{Any} & \mbox{(Unchecked polymorphic type)} \\
-\end{array}
-\medskip
-\\
-\begin{array}{rcll}
 \vx & ::= & \mbox{Variable name} \\
 \vi & ::= & \mbox{Integer literal} \\
 \vf & ::= & \mbox{Floating point literal} \\
@@ -60,7 +50,13 @@
 \medskip
 \\
 \begin{array}{rcll}
-\VV{def} & ::= & \vx\vec{(\vx\Hab\vT)} \rightarrow \vT = \vt & \mbox{(Top level definition)}
+\vT & ::= & \TC{Int} \mid \TC{Char} \mid \TC{Bool} \mid \TC{Float}
+\mid \TC{String} & \mbox{(Primitives)} \\
+ & \mid & \TC{Unit} & \mbox{(Unit type)} \\
+ & \mid & \TC{Ptr} & \mbox{(Foreign pointers)} \\
+ & \mid & \TC{Fun} & \mbox{(Any function type)} \\
+ & \mid & \TC{Data} & \mbox{(Any data type)} \\
+ & \mid & \TC{Any} & \mbox{(Unchecked polymorphic type)} \\
 \end{array}
 }
 }
