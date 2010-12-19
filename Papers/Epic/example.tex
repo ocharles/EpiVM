@@ -1,7 +1,121 @@
 \section{Example High Level Languages}
 
-% Two different examples. Perhaps:
-% * a LOGO like language (foreign functions, graphics, dynamic types?)
-% * dependent types with natelim (e.g. adder)
+\subsection{Untyped $\lambda$-calculus}
 
-[Give high level translation, rather than concrete Haskell]
+HOAS representation
+
+\begin{SaveVerbatim}{llang}
+
+data Lang = Lam (Lang -> Lang)
+          | Ref Name
+          | App Lang Lang
+          | Const Const
+          | Op Infix Lang Lang
+
+\end{SaveVerbatim}
+\useverb{llang}
+
+\begin{SaveVerbatim}{lconsts}
+
+data Const = CInt Int
+           | CStr String
+
+\end{SaveVerbatim}
+\useverb{lconsts}
+
+\begin{SaveVerbatim}{lops}
+
+data Infix = IPlus | IMinus | ITimes | IDivide | IAppend
+           | IEQ | ILT | IGT
+
+\end{SaveVerbatim}
+\useverb{lops}
+
+\begin{SaveVerbatim}{lprogs}
+
+data Def = LangDef Lang
+         | PrimDef EpicDecl
+
+type Defs = [(Name, Def)]
+
+\end{SaveVerbatim}
+\useverb{lprogs}
+
+\begin{SaveVerbatim}{lcompile}
+
+build :: Lang -> Term
+build (Lam f)          = term (\x -> build (f (EpicRef x)))
+build (EpicRef x)      = term x
+build (Ref n)          = ref n
+build (App f a)        = build f @@ build a
+build (Const (CInt x)) = int x
+build (Const (CStr x)) = str x
+build (Op IAppend l r) = fn "append" @@ build l @@ build r
+build (Op op l r)      = op_ (eOp op) (build l) (build r)
+    where eOp IPlus   = Plus
+          eOp IMinus  = Minus
+          eOp ITimes  = Times
+          eOp IDivide = Divide
+          eOp IEQ     = OpEQ
+          eOp ILT     = OpLT
+          eOp IGT     = OpGT
+
+\end{SaveVerbatim}
+\codefig{lcompile}{Compiling Untyped $\lambda$-calculus}
+
+Conversion of terms to Epic expressions is given in Figure
+\ref{lcompile}. Some things to note. To compile a lambda, we need
+something to apply the lambda to. Easiest way to do this is extend the
+\texttt{Lang} datatype with an Epic reference:
+
+\begin{SaveVerbatim}{lextend}
+
+data Lang = ...
+          | EpicRef Expr
+
+build (Lam f)          = term (\x -> build (f (EpicRef x)))
+
+\end{SaveVerbatim}
+\useverb{lextend}
+
+Might be better to have an environment or not use HOAS, but this is
+cheap and much less error prone than the alternatives.
+Compiling string append uses a built in function provided by the Epic
+interface in \texttt{basic\_defs}:
+
+\begin{SaveVerbatim}{lappend}
+
+build (Op IAppend l r) = fn "append" @@ build l @@ build r
+
+\end{SaveVerbatim}
+\useverb{lappend}
+
+Otherwise it's just a straightforward traversal of the term. Now we
+translate a list of HOAS definitions into an Epic program, add the
+Epic basic definitions, and run it. This runs the function called
+\texttt{"main"}. Epic will report an error if this doesn't exist.
+
+\begin{SaveVerbatim}{lmain}
+
+mkProgram :: Defs -> Program
+mkProgram ds = basic_defs ++ 
+               map (\ (n, d) -> (n, mkEpic d)) ds
+
+mkEpic :: Def -> EpicDecl
+mkEpic (PrimDef p) = p
+mkEpic (LangDef l) = EpicFn (build l)
+
+execute :: Defs -> IO ()
+execute p = run (mkProgram p)
+
+\end{SaveVerbatim}
+\useverb{lmain}
+
+\subsection{Dependently Typed $\lambda$-calculus}
+
+\LamPi{}~\cite{simply-easy}.
+
+\subsection{A Dynamically Typed Turtle Graphics Language}
+
+
+
