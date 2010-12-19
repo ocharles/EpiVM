@@ -6,8 +6,40 @@ But they aren't simple enough that they are easy to bolt on to a new
 language. Either too low level, or an interface isn't exposed, or
 where an interface is exposed, there are constraints on the type
 system. So things like Agda~\cite{norell-thesis} have resorted to
-generating Haskell with unsafeCoerce.
+generating Haskell with unsafeCoerce. This works but we can't expect
+GHC optimisations without working very hard, are limited to GHC's
+choice of evaluation order, and could throw away useful information
+gained from the type system.
 
 Epic originally written for Epigram~\cite{levitation} (the name is
 short for ``\textbf{Epi}gram \textbf{C}ompiler''). Now used by
 Idris~\cite{idris-plpv}, also as an experimental back end for Agda.
+
+\subsection{Features and non-features}
+
+Epic will handle the following:
+
+\begin{itemize}
+\item Managing closures and thunks
+\item Lambda lifting
+\item Some optimisations (currently inlining, a supercompiler is planned)
+\item Marshaling values to and from foreign functions
+\item Garbage collection
+\item Name choices (optionally)
+\end{itemize}
+
+\noindent
+Epic will not do the following, by design:
+
+\begin{itemize}
+\item Type checking (no assumptions are made about the type system of
+  the high level language being compiled)
+\end{itemize}
+
+Epic has few high level language features, but some additions will be
+considered which will not compromise the simplicity of the core
+language. For example, a pattern matching compiler is planned, and
+primitives for parallel execution.
+
+Also lacking, but entirely possible to add later (with some care) are
+unboxed types.
