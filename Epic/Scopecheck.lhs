@@ -51,6 +51,11 @@ Do Lambda Lifting here too
 >                                    else return $ Const (MkInt 1234567890)
 >                         (Just _) -> return $ R n
 >                      (Just i) -> return $ V i
+>    tc env (LetM n v sc) = case lookup n env of
+>                      Nothing -> lift $ fail $ "Unknown local to update" ++ showuser n
+>                      (Just i) -> do v' <- tc env v
+>                                     sc' <- tc env sc
+>                                     return $ Update i v' sc'
 >    tc env (Let n ty v sc) = do
 >                v' <- tc env v
 >                sc' <- tc ((n,length env):env) sc

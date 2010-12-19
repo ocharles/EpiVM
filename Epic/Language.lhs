@@ -108,6 +108,8 @@ Get the arity of a definition in the context
 >           | WhileAcc Expr Expr Expr
 >           | Op Op Expr Expr -- Infix operator
 >           | Let Name Type Expr Expr -- Let binding
+>           | LetM Name Expr Expr -- Update a variable
+>           | Update Int Expr Expr -- Update a variable (scope-checked)
 >           | Lam Name Type Expr -- inner lambda
 >           | Error String -- Exit with error message
 >           | Impossible -- Claimed impossible to reach code
@@ -161,6 +163,10 @@ Get the arity of a definition in the context
 >                             ", " ++ show a ++ ")"
 >     show (Op o l r) = "(" ++ show l ++ " " ++ show o ++ " " ++ show r ++")"
 >     show (Let n t v e) = "let " ++ show n ++ ":" ++ show t ++ " = " ++
+>                          show v ++ " in " ++ show e
+>     show (LetM n v e) = "let! " ++ show n ++ " = " ++
+>                          show v ++ " in " ++ show e
+>     show (Update n v e) = "let! var" ++ show n ++ " = " ++
 >                          show v ++ " in " ++ show e
 >     show (Lam n t e) = "\\ " ++ show n ++ ":" ++ show t ++ " . " ++
 >                          show e

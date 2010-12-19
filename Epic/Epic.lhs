@@ -19,7 +19,7 @@
 >                  if_, while_, whileAcc_, error_, op_,
 >                  lazy_, effect_,
 >                  foreign_, foreignL_, foreignConst_, foreignConstL_,
->                  let_, letN_, Op(..),
+>                  let_, letN_, update_, Op(..),
 >                  str, int, float, char, bool, unit_, (!.), fn, ref, (+>),
 >                  -- * Types
 >                  Type, tyInt, tyChar, tyBool, tyFloat, tyString,
@@ -269,6 +269,15 @@ Remaining expression constructs
 >               let var = MN "loc" (topVar f')
 >               fv <- f (R var)
 >               return $ Let var TyAny e' fv
+
+> -- | Update a local variable (could be an explicit name or bound with
+> -- a lambda, so we let it be an 'Expr'.
+> update_ :: (EpicExpr val, EpicExpr scope) =>
+>            Expr -> val -> scope -> Term
+> update_ (R n) val sc = do val' <- term val
+>                           sc' <- term sc
+>                           return $ LetM n val' sc'
+> update_ _ _ _ = fail "Can't update something which isn't a variable"
 
 > maxs = foldr max 0
 

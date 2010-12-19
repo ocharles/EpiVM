@@ -239,6 +239,15 @@ place.
 >                               TyUnit -> [ASSIGN vs reg']
 >                               _ -> [ASSIGN vs reg']
 >            return $ valcode ++ assigncode ++ (ADDVARROOT vs):scopecode
+
+As above, but don't create a new local
+
+>     ecomp lazy tcall (Update i val scope) reg vs =
+>         do reg' <- new_tmp
+>            valcode <- ecomp lazy Middle val reg' vs
+>            scopecode <- ecomp lazy tcall scope reg vs
+>            let assigncode = [ASSIGN i reg']
+>            return $ valcode ++ assigncode ++ scopecode
 >     ecomp lazy tcall (Error str) reg vs = return [ERROR str]
 >     ecomp lazy tcall Impossible reg vs = return [ERROR "The impossible happened."]
 >     ecomp lazy tcall (ForeignCall ty fn argtypes) reg vs = do

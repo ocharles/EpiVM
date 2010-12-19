@@ -182,6 +182,7 @@ Expr : name { R $1 }
      | Const { Const $1 }
      | Expr '!' int { Proj $1 $3 }
      | let name ':' Type '=' Expr in Expr %prec LET { Let $2 $4 $6 $8 }
+     | let '!' name '=' Expr in Expr %prec LET { LetM $3 $5 $7 }
      | '\\' name ':' Type '.' Expr %prec LET { Lam $2 $4 $6 }
      | Expr ';' Expr { Let (MN "unused" 0) TyUnit $1 $3 }
      | if Expr then Expr else Expr %prec IF { If $2 $4 $6 }
