@@ -35,13 +35,13 @@
 > type Function = ([Id], Turtle)
 
 > data Op = Plus | Minus | Times  | Divide      -- int ops
->         | Eq   | LT    | LE     | GT     | GE -- bool ops  
+>         | Eq   | Lt    | Le     | Gt     | Ge -- bool ops  
 >         | Car  | Cdr   | Append | Index       -- TODO: string/char ops
 >   deriving Show
 
 > data Command = Fd Exp
->              | Rt Exp
->              | Lt Exp
+>              | RightT Exp
+>              | LeftT Exp
 >              | Colour Exp
 >              | PenUp
 >              | PenDown

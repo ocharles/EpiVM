@@ -77,15 +77,15 @@ in SDLprims do this for us.
 > instance Compile Exp where
 >     compile state (Infix op l r) 
 >         = (mkOp op) (compile state l) (compile state r)
->         where mkOp Turtle.Plus = primPlus
->               mkOp Turtle.Minus = primMinus
->               mkOp Turtle.Times = primTimes
->               mkOp Turtle.Divide = primDivide
->               mkOp Turtle.Eq = primEq
->               mkOp Turtle.LT = primLT
->               mkOp Turtle.LE = primLE
->               mkOp Turtle.GT = primGT
->               mkOp Turtle.GE = primGE
+>         where mkOp Plus   = primPlus
+>               mkOp Minus  = primMinus
+>               mkOp Times  = primTimes
+>               mkOp Divide = primDivide
+>               mkOp Eq     = primEq
+>               mkOp Lt     = primLT
+>               mkOp Le     = primLE
+>               mkOp Gt     = primGT
+>               mkOp Ge     = primGE
 >     compile state (Var i) = ref (epicId i)
 >     compile state (Const i) = compile state i
 
@@ -118,8 +118,8 @@ them to the current state and the given argument.
 
 > instance Compile Command where
 >     compile state (Fd i)     = fn "forward" @@ state @@ compile state i
->     compile state (Rt i)     = fn "right"   @@ state @@ compile state i
->     compile state (Lt i)     = fn "left"    @@ state @@ compile state i
+>     compile state (RightT i) = fn "right"   @@ state @@ compile state i
+>     compile state (LeftT i)  = fn "left"    @@ state @@ compile state i
 >     compile state (Colour c) = fn "colour"  @@ state @@ compile state c
 >     compile state PenUp      = fn "pen"     @@ state @@ bool False
 >     compile state PenDown    = fn "pen"     @@ state @@ bool True

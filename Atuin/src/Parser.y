@@ -92,8 +92,8 @@ Turtle : name '(' ExprList ')' { Call $1 $3 }
        | eval Expr { Eval $2 }
        | repeat Expr Block { Repeat $2 $3 }
        | forward Expr { Turtle (Fd $2) }
-       | right Expr { Turtle (Rt $2) }
-       | left Expr { Turtle (Lt $2) }
+       | right Expr { Turtle (RightT $2) }
+       | left Expr { Turtle (LeftT $2) }
        | colour Expr { Turtle (Colour $2) }
        | penup { Turtle PenUp }
        | pendown { Turtle PenDown }
@@ -115,10 +115,10 @@ Expr : name { Var $1 }
      | Expr '*' Expr { Infix Times $1 $3 }
      | Expr '/' Expr { Infix Divide $1 $3 }
      | Expr eq Expr  { Infix Eq $1 $3 }
-     | Expr '<' Expr { Infix Turtle.LT $1 $3 }
-     | Expr '>' Expr { Infix Turtle.GT $1 $3 }
-     | Expr le Expr  { Infix LE $1 $3 }
-     | Expr ge Expr  { Infix GE $1 $3 }
+     | Expr '<' Expr { Infix Lt $1 $3 }
+     | Expr '>' Expr { Infix Gt $1 $3 }
+     | Expr le Expr  { Infix Le $1 $3 }
+     | Expr ge Expr  { Infix Ge $1 $3 }
      | '(' Expr ')'  { $2 }
      | '{' TurtleProg '}' { Block $2 }
 

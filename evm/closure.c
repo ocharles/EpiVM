@@ -964,6 +964,14 @@ void* MKFREE(int x)
     return c;
 }
 
+void slide(VMState* vm, int lose, int keep) {
+    int i;
+    for(i = 1; i <= keep; i++) {
+	vm->stack_top[-(lose+i)] = *(vm->stack_top-i);
+    }
+    vm->stack_top-=lose;
+}
+
 VAL evm_getArg(int i) {
     if (i>=0 && i<v_argc) 
 	return v_argv[i];
@@ -1003,8 +1011,12 @@ VMState* init_evm(int argc, char* argv[])
     }
     EREADY(v_argv);
 
-/*
     VMState* vm = malloc(sizeof(VMState));
+    vm->stack = malloc(sizeof(VAL)*STACK_INIT);
+    vm->stack_top = vm->stack+STACK_INIT;
+    vm->stack_top = vm->stack;
+
+/*
     vm->roots = malloc(sizeof(VAL)*1024);
     vm->start_roots = vm->roots;
 
@@ -1015,7 +1027,7 @@ VMState* init_evm(int argc, char* argv[])
     vm->next_nursery = 0;
     vm->next = 0;
 */
-    return NULL;
+    return vm;
 }
 
 void epic_main(int argc, char* argv[])

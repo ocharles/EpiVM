@@ -16,14 +16,19 @@
 >                  Expr, Term, Name, name,
 >                  (@@), case_, con_, tuple_, con, tuple,
 >                  constcase, defaultcase,
->                  if_, while_, whileAcc_, error_, op_,
+>                  if_, while_, whileAcc_, error_, 
 >                  lazy_, effect_,
 >                  foreign_, foreignL_, foreignConst_, foreignConstL_,
->                  let_, letN_, update_, Op(..),
+>                  let_, letN_, update_, op_,
 >                  str, int, float, char, bool, unit_, (!.), fn, ref, (+>),
 >                  -- * Types
 >                  Type, tyInt, tyChar, tyBool, tyFloat, tyString,
->                  tyPtr, tyUnit, tyAny, tyC, 
+>                  tyPtr, tyUnit, tyAny, tyC,
+>                  -- * Operators
+>                  plus_, minus_, times_, divide_, 
+>                  plusF_, minusF_, timesF_, divideF_,
+>                  eq_, lt_, lte_, gt_, gte_, 
+>                  eqF_, ltF_, lteF_, gtF_, gteF_, shiftl_, shiftr_,
 >                  -- * Declarations and programs
 >                  EpicDecl(..), Program, 
 >                  -- * Compiling and execution
@@ -101,11 +106,33 @@ Allow Haskell functions to be used to build expressions.
 
 Binary operators
 
-> eq = Op OpEQ
-> lt = Op OpLT
-> lte = Op OpLE
-> gt = Op OpGT
-> gte = Op OpGE
+> plus_, minus_, times_, divide_, plusF_, minusF_, timesF_, divideF_ :: Op
+> lt_, lte_, gt_, gte_, ltF_, lteF_, gtF_, gteF_, shiftl_, shiftr_   :: Op
+
+> plus_   = Plus
+> minus_  = Minus
+> times_  = Times
+> divide_ = Divide
+
+> plusF_   = FPlus
+> minusF_  = FMinus
+> timesF_  = FTimes
+> divideF_ = FDivide
+
+> eq_  = OpEQ
+> lt_  = OpLT
+> lte_ = OpLE
+> gt_  = OpGT
+> gte_ = OpGE
+
+> eqF_  = OpFEQ
+> ltF_  = OpFLT
+> lteF_ = OpFLE
+> gtF_  = OpFGT
+> gteF_ = OpFGE
+
+> shiftl_ = ShL
+> shiftr_ = ShR
 
 > mkFunc :: EpicFn e => e -> Func
 > mkFunc e = evalState (func e) 0

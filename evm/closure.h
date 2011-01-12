@@ -145,10 +145,24 @@ typedef struct {
     VAL* to_space;
     VAL* nursery;
 
+    VAL* stack;
+    VAL* stack_top;
+    VAL* stack_limit;
+
     int heap_size;
     int next;
     int next_nursery;
 } VMState;
+
+#define STACK_INIT 8192
+
+#define STACK(x) (*(vm->stack_top-x))
+#define PUSH(x) vm->stack_top=x; vm->stack_top++;
+#define DROP(x) vm->stack_top-=x;
+#define SLIDE1(x) vm->stack_top[-(x+1)]=*(vm->stack_top-1); vm->stack_top-=x;
+#define SLIDE(x,keep) slide(vm,x,keep);
+
+void slide(VMState* vm, int lose, int keep);
 
 extern void* e_malloc(VMState* vm, size_t size);
 extern void* e_realloc(VMState* vm, void* ptr, size_t size);

@@ -1,19 +1,25 @@
 \section{Introduction}
 
+[Just some notes for now...]
+
 Lots of backends for functional languages,
 e.g. STG~\cite{evalpush,stg,llvm-haskell}, ABC~\cite{abc-machine}.
 But they aren't simple enough that they are easy to bolt on to a new
 language. Either too low level, or an interface isn't exposed, or
 where an interface is exposed, there are constraints on the type
 system. So things like Agda~\cite{norell-thesis} have resorted to
-generating Haskell with unsafeCoerce. This works but we can't expect
+generating Haskell with unsafeCoerce, Cayenne~\cite{cayenne-icfp} used LML
+with the type checker switched off. This works but we can't expect
 GHC optimisations without working very hard, are limited to GHC's
 choice of evaluation order, and could throw away useful information
 gained from the type system.
 
-Epic originally written for Epigram~\cite{levitation} (the name is
+Epic originally written for Epigram~\cite{levitation} (the
+name\footnote{Coined by James McKinna} is
 short for ``\textbf{Epi}gram \textbf{C}ompiler''). Now used by
 Idris~\cite{idris-plpv}, also as an experimental back end for Agda.
+It is specifically designed for reuse by other languages (in constrast
+to, say, Haskell Core).
 
 \subsection{Features and non-features}
 
@@ -43,3 +49,39 @@ primitives for parallel execution.
 
 Also lacking, but entirely possible to add later (with some care) are
 unboxed types.
+
+\subsection{Why an Intermediate Language}
+
+Why not generate Haskell, OCaml, Scheme, \ldots? In general they are
+too high level and impose design choices and prevent certain
+implementation choices. An intermediate level language such as Epic
+allows the following:
+
+\begin{description}
+\item[Control of generated code]
+A higher level target language imposes implementation choices such as
+evaluation strategy and purity. Also makes it harder to use lower
+level features where it might be appropriate (e.g. while loops, mutation).
+
+\item[Control of language design]
+Choice of a high level target language (especially a typed one) might
+influence our type system design, restrict our choices for ease of
+code generation. 
+
+\item[Efficiency]
+We might expect using a mature target language to give us
+optimisations for free. This might be true in many cases, but only if
+our source language is similar enough. e.g. in Epigram the type system
+tells us more about the code than we can pass on to a Haskell back
+end. 
+
+\end{description}
+
+Epic aims to provide the necessary features for implementing the
+back-end of a functional language --- thunks, closures, algebraic data
+types, scope management, lambda lifting --- without imposing
+\remph{any} design choices on the high level language designer, with
+the obvious exception that a functional style is encouraged!
+A further advantage of Epic is that the library provides
+\remph{compiler combinators}, which guarantee that any
+output code will be syntactically correct and well-scoped.

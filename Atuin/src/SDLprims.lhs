@@ -72,18 +72,18 @@ we stop any other instances for (a -> e) being allowed somehow?
 
 Arithmetic operations
 
-> primPlus x y = mkint $ op_ Plus (getInt x) (getInt y)
-> primMinus x y = mkint $ op_ Minus (getInt x) (getInt y)
-> primTimes x y = mkint $ op_ Times (getInt x) (getInt y)
-> primDivide x y = mkint $ op_ Divide (getInt x) (getInt y)
+> primPlus x y = mkint $ op_ plus_ (getInt x) (getInt y)
+> primMinus x y = mkint $ op_ minus_ (getInt x) (getInt y)
+> primTimes x y = mkint $ op_ times_ (getInt x) (getInt y)
+> primDivide x y = mkint $ op_ divide_ (getInt x) (getInt y)
 
 Comparisons
 
-> primEq x y = mkbool $ op_ OpEQ (getInt x) (getInt y)
-> primLT x y = mkbool $ op_ OpLT (getInt x) (getInt y)
-> primLE x y = mkbool $ op_ OpLE (getInt x) (getInt y)
-> primGT x y = mkbool $ op_ OpGT (getInt x) (getInt y)
-> primGE x y = mkbool $ op_ OpGE (getInt x) (getInt y)
+> primEq x y = mkbool $ op_ eq_ (getInt x) (getInt y)
+> primLT x y = mkbool $ op_ lt_ (getInt x) (getInt y)
+> primLE x y = mkbool $ op_ lte_ (getInt x) (getInt y)
+> primGT x y = mkbool $ op_ gt_ (getInt x) (getInt y)
+> primGE x y = mkbool $ op_ gte_ (getInt x) (getInt y)
 
 Graphics primitive, just extracts the tuple of RGBA values for the colour
 and calls the SDL_gfx primitive.
@@ -105,7 +105,7 @@ Here's some primitives to do the necessary conversions.
 > intToFloat x = foreign_ tyFloat "intToFloat" [(x, tyInt)]
 > floatToInt x = foreign_ tyInt "floatToInt" [(x, tyFloat)]
 
-> rad x = op_ FTimes (intToFloat x) (float (pi/180))
+> rad x = op_ timesF_ (intToFloat x) (float (pi/180))
 
 > esin x = foreign_ tyFloat "sin" [(rad x, tyFloat)]
 > ecos x = foreign_ tyFloat "cos" [(rad x, tyFloat)]
@@ -122,10 +122,10 @@ Return the new state.
 > forward st dist = case_ st 
 >   [tuple (\ (surf :: Expr) (x :: Expr) (y :: Expr) 
 >             (dir :: Expr) (col :: Expr) (pen :: Expr) -> 
->              let_ (op_ Plus x (floatToInt (op_ FTimes (intToFloat (getInt dist))
+>              let_ (op_ plus_ x (floatToInt (op_ timesF_ (intToFloat (getInt dist))
 >                                                        (esin dir))))
->              (\x' -> let_ (op_ Plus y (floatToInt 
->                                            (op_ FTimes (intToFloat (getInt dist))
+>              (\x' -> let_ (op_ plus_ y (floatToInt 
+>                                            (op_ timesF_ (intToFloat (getInt dist))
 >                                                        (ecos dir))))
 >              (\y' -> if_ pen (fn "drawLine" @@ surf @@ x @@ y 
 >                                      @@ x' @@ y' @@ col)
@@ -139,7 +139,7 @@ Return the new state.
 > right st ang = case_ st
 >   [tuple (\ (surf :: Expr) (x :: Expr) (y :: Expr) 
 >             (dir :: Expr) (col :: Expr) (pen :: Expr) -> 
->          (tuple_ @@ surf @@ x @@ y @@ op_ Minus dir (getInt ang) @@ col @@ pen))]
+>          (tuple_ @@ surf @@ x @@ y @@ op_ minus_ dir (getInt ang) @@ col @@ pen))]
 
 To turn left, create a new state with the turtle turned left. 
 Return the new state.
@@ -148,7 +148,7 @@ Return the new state.
 > left st ang = case_ st
 >   [tuple (\ (surf :: Expr) (x :: Expr) (y :: Expr) 
 >             (dir :: Expr) (col :: Expr) (pen :: Expr) -> 
->          (tuple_ @@ surf @@ x @@ y @@ op_ Plus dir (getInt ang) @@ col @@ pen))]
+>          (tuple_ @@ surf @@ x @@ y @@ op_ plus_ dir (getInt ang) @@ col @@ pen))]
 
 > colour :: Expr -> Expr -> Term
 > colour st col' = case_ st
@@ -169,7 +169,7 @@ Repeat n times
 >                 [constcase 0 st,
 >                  defaultcase (let_ (e @@ st)
 >                      (\st' -> fn "repeat" @@ st'
->                                   @@ mkint (op_ Minus (getInt n) (int 1))
+>                                   @@ mkint (op_ minus_ (getInt n) (int 1))
 >                                   @@ e))]
 
 Turtle state consists of an SDL surface,

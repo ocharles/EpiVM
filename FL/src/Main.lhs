@@ -6,7 +6,7 @@
 > import Epic.Epic
 
 > add :: Lang
-> add = Lam (\x -> Lam (\y -> Op IPlus x y))
+> add = Lam (\x -> Lam (\y -> Op Plus x y))
 
 > main_ = App (Ref (name "putStrLn"))
 >             (App (Ref (name "intToString"))

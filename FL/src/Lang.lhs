@@ -14,8 +14,8 @@
 > data Const = CInt Int
 >            | CStr String
 
-> data Infix = IPlus | IMinus | ITimes | IDivide | IAppend
->            | IEQ | ILT | IGT
+> data Infix = Plus  | Minus | Times | Divide | Append
+>            | Equal | Lt    | Gt
 
 > data Def = LangDef Lang
 >          | PrimDef EpicDecl
@@ -29,15 +29,15 @@
 > build (App f a) = build f @@ build a
 > build (Const (CInt x)) = int x
 > build (Const (CStr x)) = str x
-> build (Op IAppend l r) = fn "append" @@ build l @@ build r
+> build (Op Append l r) = fn "append" @@ build l @@ build r
 > build (Op op l r) = op_ (buildOp op) (build l) (build r)
->  where buildOp IPlus = Plus
->        buildOp IMinus = Minus
->        buildOp ITimes = Times
->        buildOp IDivide = Divide
->        buildOp IEQ = OpEQ
->        buildOp ILT = OpLT
->        buildOp IGT = OpGT
+>  where buildOp Plus   = plus_
+>        buildOp Minus  = minus_
+>        buildOp Times  = times_
+>        buildOp Divide = divide_
+>        buildOp Equal  = eq_
+>        buildOp Lt     = lt_
+>        buildOp Gt     = gt_
 
 > mkEpic :: Def -> EpicDecl
 > mkEpic (PrimDef p) = p

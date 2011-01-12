@@ -1,19 +1,28 @@
 \section{The Epic Language}
 
-\subsection{Definitions}
+Epic is an untyped $\lambda$-calculus with algebraic data types.
+There are additional control structures for specifying evaluation
+order, primitive loop constructs, and calling foreign
+functions. Foreign function calls are annotated with types, to assist
+with marshaling data between Epic and C, but otherwise there are no
+type annotations and there is no type checking --- as Epic is intended
+as an intermediate language, it is assumed that the high level
+language has already performed any necessary type checking. The
+abstract syntax of the core language is given in Figure \ref{epicsyn}.
 
 \newcommand{\Con}[2]{\DC{Con}\:#1(#2)}
 
 \FFIG{
 \AR{
 \begin{array}{rcll}\\
-\VV{def} & ::= & \vx\vec{(\vx\Hab\vT)} \rightarrow \vT = \vt &
+\vp & ::= & \vec{\VV{def}} & \mbox{(Epic program)} \\
+\VV{def} & ::= & \vx(\tx) = \vt &
 \mbox{(Top level definition)} \\
 \\
 \vt & ::= & \vx & \mbox{(Variable)} \\
 & \mid &  \vt(\ttt) & \mbox{(Function application)} \\
-& \mid & \lam{\vx}{\vT}\SC\vt & \mbox{(Lambda binding)} \\
-& \mid & \RW{let}\:\vx\Hab\vT\:=\:\vt\:\RW{in}\:\vt & \mbox{(Let
+& \mid & \lambda\:\vx\SC\vt & \mbox{(Lambda binding)} \\
+& \mid & \RW{let}\:\vx\:=\:\vt\:\RW{in}\:\vt & \mbox{(Let
   binding)} \\
 & \mid & \Con{\vi}{\ttt} & \mbox{(Constructor application)} \\
 & \mid & \vt ! \vi & \mbox{(Argument projection)} \\
@@ -23,6 +32,7 @@
 & \mid & \RW{lazy}(\vt) & \mbox{(Lazy evaluation)} \\
 & \mid & \RW{effect}(\vt) & \mbox{(Evaluate an effectful term)} \\
 & \mid & \RW{while}(\vt,\vt) & \mbox{(While loops)} \\
+& \mid & \vx := \:\vt\:\RW{in}\:\vt & \mbox{(Variable update)} \\
 & \mid & \RW{foreign}\:\vT\:\VV{str}\:\vec{(\vt\Hab\vT)} & \mbox{(Foreign call)} \\
 & \mid & \vi \mid \vf \mid \vc \mid \vb \mid \VV{str} & \mbox{(Constants)} \\
 \\
@@ -63,8 +73,9 @@
 {Epic syntax}
 {epicsyn}
 
-BNF in Figure \ref{epicsyn}. Expressions. \texttt{let}, \texttt{case},
-\texttt{lazy}, \texttt{while}
+\subsection{Definitions}
+
+Expressions. \texttt{let}, \texttt{case}, \texttt{lazy}
 
 \subsection{Types}
 
@@ -72,6 +83,12 @@ BNF in Figure \ref{epicsyn}. Expressions. \texttt{let}, \texttt{case},
 \texttt{Unit}. Unchecked! Used for marshalling foreign functions only.
 
 Run-time representation (31 bit ints).
+
+\subsection{Imperative Features}
+
+Motivation: no need to limit ourselves to functional languages, and in
+some situations may help a high level language implement some optimisations.
+\texttt{while}, variable update.
 
 \subsection{Foreign Functions}
 
@@ -82,7 +99,9 @@ Calling, exporting.
 How it's implemented is not really important --- a compiler can target
 Epic without knowing. There is currently one back end, but more are
 planned. Compiled via C. Garbage collection with
-Boehm~\cite{boehm-gc}, \texttt{\%memory}.
+Boehm~\cite{boehm-gc}, \texttt{\%memory}. (Note that a non-moving
+collector makes things easier for foreign functions, but may not be
+the best choice in the long run).
 
 Later plans: compile via LLVM, allow plug in garbage collectors
 (important for embedded systems, device drivers, operating system
