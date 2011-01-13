@@ -34,6 +34,7 @@ abstract syntax of the core language is given in Figure \ref{epicsyn}.
 & \mid & \RW{while}(\vt,\vt) & \mbox{(While loops)} \\
 & \mid & \vx := \:\vt\:\RW{in}\:\vt & \mbox{(Variable update)} \\
 & \mid & \RW{foreign}\:\vT\:\VV{str}\:\vec{(\vt\Hab\vT)} & \mbox{(Foreign call)} \\
+& \mid & \RW{malloc}\:\ve\:\ve & \mbox{(Manual allocation)} \\
 & \mid & \vi \mid \vf \mid \vc \mid \vb \mid \VV{str} & \mbox{(Constants)} \\
 \\
 \VV{alt} & ::= &
@@ -94,20 +95,10 @@ some situations may help a high level language implement some optimisations.
 
 Calling, exporting.
 
-\subsection{Implementation}
-
-How it's implemented is not really important --- a compiler can target
-Epic without knowing. There is currently one back end, but more are
-planned. Compiled via C. Garbage collection with
-Boehm~\cite{boehm-gc}, \texttt{\%memory}. (Note that a non-moving
-collector makes things easier for foreign functions, but may not be
-the best choice in the long run).
-
-Later plans: compile via LLVM, allow plug in garbage collectors
-(important for embedded systems, device drivers, operating system
-services, for example).
-
 \subsection{Haskell API}
 
 Function names. Distinction between Haskell application and Epic
-application (\texttt{@@}).
+application (\texttt{@@}). Underscore convention -- it's for primitive
+language constructs, arises because we can't have ``let'', ``if'',
+``case'' etc as function names, and extended to other primitives such
+as operators, foreign calls (anything that'd be a keyword in general).

@@ -1,8 +1,29 @@
 \section{Example High Level Languages}
 
+In this section we present compilers for three different high level
+languages to demonstrate aspects of the Epic API. Firstly, we present
+a compiler for the untyped $\lambda$-calculus using Higher Order
+Abstract Syntax, which shows the fundamental features of Epic required
+to implement a complete compiler. Secondly, we present a compiler for 
+\LamPi{}~\cite{simply-easy}, a dependently typed language, which shows
+how Epic can handle languages with more expressive type
+systems. Finally, we present a compiler for a dynamically typed
+graphics language, which shows how Epic can be used for languages with
+run-time type checking and which require foreign function calls.
+
 \subsection{Untyped $\lambda$-calculus}
 
-HOAS representation
+\subsubsection{Representation}
+
+Our first example is an implementation of the untyped
+$\lambda$-calculus, plus primitive integers and strings, and
+arithmetic and string operators. The language is represented in
+Haskell using higher order abstract syntax (HOAS).  That is, we
+represent $\lambda$-bindings (\texttt{Lam}) as Haskell functions,
+using a Haskell variable name to refer to the locally bound
+variable. We also include global reference (\texttt{Ref}) which refer
+to top level functions, function application (\texttt{App}), constants
+(\texttt{Const}) and binary operators (\texttt{Op}):
 
 \begin{SaveVerbatim}{llang}
 
@@ -15,6 +36,9 @@ data Lang = Lam (Lang -> Lang)
 \end{SaveVerbatim}
 \useverb{llang}
 
+\noindent
+Constants can be either integers or strings:
+
 \begin{SaveVerbatim}{lconsts}
 
 data Const = CInt Int
@@ -23,24 +47,95 @@ data Const = CInt Int
 \end{SaveVerbatim}
 \useverb{lconsts}
 
+\noindent
+There are infix operators for arithmetic (\texttt{Plus},
+\texttt{Minus}, \texttt{Times} and \texttt{Divide}), string
+manipulation (\texttt{Append}) and comparison (\texttt{Eq},
+\texttt{Lt} and \texttt{Gt}). The comparison operators return an
+integer --- zero if the comparison is true, non-zero otherwise:
+
 \begin{SaveVerbatim}{lops}
 
-data Infix = IPlus | IMinus | ITimes | IDivide | IAppend
-           | IEQ | ILT | IGT
+data Infix = Plus | Minus | Times | Divide | Append
+           | Eq   | Lt    | Gt
 
 \end{SaveVerbatim}
 \useverb{lops}
 
+\noindent
+A complete program consists of a collection of named \texttt{Lang}
+definitions:
+
 \begin{SaveVerbatim}{lprogs}
 
-data Def = LangDef Lang
-         | PrimDef EpicDecl
-
-type Defs = [(Name, Def)]
+type Defs = [(Name, Lang)]
 
 \end{SaveVerbatim}
 \useverb{lprogs}
 
+\subsubsection{Compilation}
+
+Our aim is to convert a collection of \texttt{Defs} into an
+executable, using one of the following functions from the Epic API:
+
+\begin{SaveVerbatim}{compepic}
+
+compile :: Program -> FilePath -> IO ()
+run     :: Program -> IO ()
+
+\end{SaveVerbatim}
+\useverb{compepic}
+
+\noindent
+Given an Epic \texttt{Program}, \texttt{compile} will generate an
+executable, and \texttt{run} will generate an executable then run it.
+A program is a collection of named Epic declarations:
+
+\begin{SaveVerbatim}{eprogs}
+
+data EpicDecl = forall e. EpicFn e => EpicFn e
+              | ...
+
+type Program = [(Name, EpicDecl)]
+
+\end{SaveVerbatim}
+\useverb{eprogs}
+
+\noindent
+Epic declarations are usually just an Epic function (\texttt{EpicFn})
+but can also be used to include C header files, declare libraries for
+linking and declare types for exporting as C types. The library also
+provides a number of built in definitions for some common operations
+such as outputting strings and converting data types:
+
+\begin{SaveVerbatim}{bdefs}
+
+basic_defs :: [(Name, EpicDecl)]
+
+\end{SaveVerbatim}
+\useverb{bdefs}
+
+\noindent
+Our goal, then, is to convert a \texttt{Lang} definition into
+something which is an instance of \texttt{EpicFn}. We use
+\texttt{Term}, which is an Epic expression which carries a name
+supply. Most of the term construction functions in the Epic API return
+a \texttt{Term}.
+
+\begin{SaveVerbatim}{buildtype}
+
+build :: Lang -> Term
+
+\end{SaveVerbatim}
+\useverb{buildtype}
+
+\noindent
+The full implementation of \texttt{build} is given in Figure \ref{lcompile}.
+In general, this is a straightforward traversal of the \texttt{Lang}
+program, converting \texttt{Lang} constants to Epic constants,
+\texttt{Lang} application to Epic application, and \texttt{Lang}
+operators to the appropriate built-in Epic operators. 
+                  
 \begin{SaveVerbatim}{lcompile}
 
 build :: Lang -> Term
@@ -50,60 +145,71 @@ build (Ref n)          = ref n
 build (App f a)        = build f @@ build a
 build (Const (CInt x)) = int x
 build (Const (CStr x)) = str x
-build (Op IAppend l r) = fn "append" @@ build l @@ build r
+build (Op Append l r)  = fn "append" @@ build l @@ build r
 build (Op op l r)      = op_ (eOp op) (build l) (build r)
-    where eOp IPlus   = Plus
-          eOp IMinus  = Minus
-          eOp ITimes  = Times
-          eOp IDivide = Divide
-          eOp IEQ     = OpEQ
-          eOp ILT     = OpLT
-          eOp IGT     = OpGT
+    where eOp Plus   = plus_
+          eOp Minus  = minus_
+          eOp Times  = times_
+          eOp Divide = divide_
+          eOp Eq     = eq_
+          eOp Lt     = lt_
+          eOp Gt     = gt_
 
 \end{SaveVerbatim}
 \codefig{lcompile}{Compiling Untyped $\lambda$-calculus}
 
-Conversion of terms to Epic expressions is given in Figure
-\ref{lcompile}. Some things to note. To compile a lambda, we need
-something to apply the lambda to. Easiest way to do this is extend the
-\texttt{Lang} datatype with an Epic reference:
+The cases worth noting are the compilation of $\lambda$-bindings and
+string concatenation. Using HOAS has the advantage that Haskell can
+manage scoping, but the disadvantage that it is not straightforward to
+convert the abstract syntax into another form. The Epic API also
+allows scope management using HOAS, so we need to convert a function
+where the bound name refers to a \texttt{Lang} value into a function
+where the bound name refers to an Epic value. The easiest solution is
+to extend the \texttt{Lang} datatype with an Epic reference:
 
 \begin{SaveVerbatim}{lextend}
 
 data Lang = ...
           | EpicRef Expr
 
-build (Lam f)          = term (\x -> build (f (EpicRef x)))
+build (Lam f) = term (\x -> build (f (EpicRef x)))
 
 \end{SaveVerbatim}
 \useverb{lextend}
 
-Might be better to have an environment or not use HOAS, but this is
-cheap and much less error prone than the alternatives.
+\noindent
+To convert a \texttt{Lang} function to an Epic function, we build an
+Epic function in which we apply the \texttt{Lang} function to the Epic
+reference for its argument. Every reference to a name in \texttt{Lang}
+is converted to the equivalent reference to the name in Epic. While
+there may be neater solutions involving an environment, or avoiding
+HOAS, this solution is very simple to implement, and preserves the
+desirable feature that Haskell manages scope.
+
 Compiling string append uses a built in function provided by the Epic
 interface in \texttt{basic\_defs}:
 
 \begin{SaveVerbatim}{lappend}
 
-build (Op IAppend l r) = fn "append" @@ build l @@ build r
+build (Op Append l r) 
+       = fn "append" @@ build l @@ build r
 
 \end{SaveVerbatim}
 \useverb{lappend}
 
-Otherwise it's just a straightforward traversal of the term. Now we
-translate a list of HOAS definitions into an Epic program, add the
-Epic basic definitions, and run it. This runs the function called
-\texttt{"main"}. Epic will report an error if this doesn't exist.
+\noindent
+Given \texttt{build}, we can translate a collection of HOAS
+definitions into an Epic program, add the built-in Epic definitions
+and execute it directly. Execution begins with the function called
+\texttt{"main"} --- Epic reports an error if this function is not
+defined.
 
 \begin{SaveVerbatim}{lmain}
 
 mkProgram :: Defs -> Program
 mkProgram ds = basic_defs ++ 
-               map (\ (n, d) -> (n, mkEpic d)) ds
-
-mkEpic :: Def -> EpicDecl
-mkEpic (PrimDef p) = p
-mkEpic (LangDef l) = EpicFn (build l)
+               map (\ (n, d) -> 
+                      (n, EpicFn (build d))) ds
 
 execute :: Defs -> IO ()
 execute p = run (mkProgram p)
@@ -111,9 +217,35 @@ execute p = run (mkProgram p)
 \end{SaveVerbatim}
 \useverb{lmain}
 
+\noindent
+Alternatively, we can generate an executable. Again, the entry point
+is the Epic function called \texttt{"main"}:
+
+\begin{SaveVerbatim}{lcomp}
+
+comp :: Defs -> IO ()
+comp p = compile "a.out" (mkProgram p)
+
+\end{SaveVerbatim}
+\useverb{lcomp}
+
+\noindent
+This is a compiler for a very simple language, but a compiler for any
+more complex language using the Epic API follows the same pattern:
+convert the abstract syntax for each named definition into a named Epic
+\texttt{Term}, add any required primitives (we have just used
+\texttt{basic\_defs} here), and pass the collection of definitions to
+\texttt{run} or \texttt{compile}.
+
 \subsection{Dependently Typed $\lambda$-calculus}
 
-\LamPi{}~\cite{simply-easy}.
+\LamPi{}~\cite{simply-easy}. Complications: elimination
+operators. Representation uses de Bruijn indices. Need a way to dump
+output. Non-complication: odd type system.
+
+\subsubsection{Representation}
+
+\subsubsection{Compilation}
 
 \subsection{A Dynamically Typed Turtle Graphics Language}
 
