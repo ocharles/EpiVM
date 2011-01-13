@@ -93,10 +93,10 @@ A program is a collection of named Epic declarations:
 
 \begin{SaveVerbatim}{eprogs}
 
-data EpicDecl = forall e. EpicFn e => EpicFn e
+data EpicDecl = forall e. EpicFn e => EpicFn Name e
               | ...
 
-type Program = [(Name, EpicDecl)]
+type Program = [EpicDecl]
 
 \end{SaveVerbatim}
 \useverb{eprogs}
@@ -110,7 +110,7 @@ such as outputting strings and converting data types:
 
 \begin{SaveVerbatim}{bdefs}
 
-basic_defs :: [(Name, EpicDecl)]
+basic_defs :: [EpicDecl]
 
 \end{SaveVerbatim}
 \useverb{bdefs}
@@ -208,8 +208,7 @@ defined.
 
 mkProgram :: Defs -> Program
 mkProgram ds = basic_defs ++ 
-               map (\ (n, d) -> 
-                      (n, EpicFn (build d))) ds
+               map (\ (n, d) -> EpicFn n (build d)) ds
 
 execute :: Defs -> IO ()
 execute p = run (mkProgram p)

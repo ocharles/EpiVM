@@ -13,6 +13,6 @@
 >                  (App (App (Ref (name "add")) 
 >                        (Const (CInt 5))) (Const (CInt 6))))
 
-> testdefs = [(name "add", LangDef add), (name "main", LangDef main_)]
+> testdefs = [(name "add", add), (name "main", main_)]
 
 > main = execute testdefs

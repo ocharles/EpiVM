@@ -128,9 +128,9 @@ Convert a function with arguments into an Epic definition. We have the
 arguments in the definition, plus an additional state added by the system
 which carries the turtle state and SDL surface.
 
-> mkEpic :: (Id, Function) -> (Name, EpicDecl)
+> mkEpic :: (Id, Function) -> EpicDecl
 > mkEpic (i, (args, p)) 
->       = (epicId i, EpicFn (\ state -> (map epicId args, compile state p)))
+>       = EpicFn (epicId i) (\ state -> (map epicId args, compile state p))
 
 Epic main program - initialises SDL, sets up an initial turtle state,
 runs the program called "main" and waits for a key press.
@@ -151,9 +151,9 @@ with the primitives (from SDLprims) and the user's program.
 >                     sdlo <- getDataFileName "sdl/sdlrun.o"
 >                     sdlh <- getDataFileName "sdl/sdlrun.h"
 >                     let eprog = map mkEpic prog
->                     let incs = [(name "hdr", Include sdlh),
->                                 (name "hdr", Include "math.h")]
+>                     let incs = [Include sdlh,
+>                                 Include "math.h"]
 >                     compileObj (incs ++ sdlPrims ++ 
->                                (name "main", EpicFn runMain):eprog)
+>                                 EpicFn (name "main") runMain : eprog)
 >                                 (fp++".o")
 >                     linkWith opts [fp++".o", sdlo] fp

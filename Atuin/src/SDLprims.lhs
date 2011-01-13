@@ -186,14 +186,14 @@ the user direct access to this tuple.
 Export the primitives as Epic functions.
 
 > sdlPrims = basic_defs ++
->            [(name "initSDL",     EpicFn initSDL),
->             (name "pollEvent",   EpicFn pollEvent),
->             (name "flipBuffers", EpicFn flipBuffers),
->             (name "drawLine",    EpicFn drawLine),
->             (name "forward",     EpicFn forward),
->             (name "left",        EpicFn left),
->             (name "right",       EpicFn right),
->             (name "colour",      EpicFn colour),
->             (name "pen",         EpicFn pen),
->             (name "repeat",      EpicFn primRepeat),
->             (name "pressAnyKey", EpicFn pressAnyKey)]
+>            [EpicFn (name "initSDL") initSDL,
+>             EpicFn (name "pollEvent") pollEvent,
+>             EpicFn (name "flipBuffers") flipBuffers,
+>             EpicFn (name "drawLine") drawLine,
+>             EpicFn (name "forward") forward,
+>             EpicFn (name "left") left,
+>             EpicFn (name "right") right,
+>             EpicFn (name "colour") colour,
+>             EpicFn (name "pen") pen,
+>             EpicFn (name "repeat") primRepeat,
+>             EpicFn (name "pressAnyKey") pressAnyKey]

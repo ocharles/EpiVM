@@ -410,25 +410,25 @@ Remaining expression constructs
 >                 _ -> return $ App f' [a']
 
 > -- | Top level declarations
-> data EpicDecl = forall e. EpicFn e => EpicFn e -- ^ Normal function
+> data EpicDecl = forall e. EpicFn e => EpicFn Name e -- ^ Normal function
 >               | Include String -- ^ Include a C header
 >               | Link String    -- ^ Link to a C library
 >               | CType String   -- ^ Export a C type
 
 > instance Show EpicDecl where
->     show (EpicFn e) = show (evalState (func e) 0)
+>     show (EpicFn n e) = show (n, evalState (func e) 0)
 
-> type Program = [(Name, EpicDecl)]
+> type Program = [EpicDecl]
 
 > name :: String -> Name
 > name = UN
 
-> mkDecl :: (Name, EpicDecl) -> Decl
-> mkDecl (n, EpicFn e) = Decl n TyAny (mkFunc e) Nothing []
+> mkDecl :: EpicDecl -> Decl
+> mkDecl (EpicFn n e) = Decl n TyAny (mkFunc e) Nothing []
 > -- mkDecl (n, Epic.Epic.Extern nm ty tys) = Epic.Language.Extern nm ty tys
-> mkDecl (n, Epic.Epic.Include f) = Epic.Language.Include f
-> mkDecl (n, Epic.Epic.Link f) = Epic.Language.Link f
-> mkDecl (n, Epic.Epic.CType f) = Epic.Language.CType f
+> mkDecl (Epic.Epic.Include f) = Epic.Language.Include f
+> mkDecl (Epic.Epic.Link f) = Epic.Language.Link f
+> mkDecl (Epic.Epic.CType f) = Epic.Language.CType f
 
 > -- |Compile a program to an executable
 > compile :: Program -> FilePath -> IO ()
@@ -484,9 +484,10 @@ Some useful functions
 > intToString_ x = foreign_ tyString "intToStr" [(x, tyInt)]
 
 > -- | Some default definitions: putStr, putStrLn, readStr, append, intToString
-> basic_defs = [(name "putStr",      EpicFn putStr_),
->               (name "putStrLn",    EpicFn putStrLn_),
->               (name "readStr",     EpicFn readStr_),
->               (name "append",      EpicFn append_),
->               (name "intToString", EpicFn intToString_)]
+> basic_defs :: [EpicDecl]
+> basic_defs = [EpicFn (name "putStr")      putStr_,
+>               EpicFn (name "putStrLn")    putStrLn_,
+>               EpicFn (name "readStr")     readStr_,
+>               EpicFn (name "append")      append_,
+>               EpicFn (name "intToString") intToString_]
 

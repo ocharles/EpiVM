@@ -17,10 +17,7 @@
 > data Infix = Plus  | Minus | Times | Divide | Append
 >            | Equal | Lt    | Gt
 
-> data Def = LangDef Lang
->          | PrimDef EpicDecl
-
-> type Defs = [(Name, Def)]
+> type Defs = [(Name, Lang)]
 
 > build :: Lang -> Term
 > build (Lam f) = term (\x -> build (f (EpicRef x)))
@@ -39,12 +36,8 @@
 >        buildOp Lt     = lt_
 >        buildOp Gt     = gt_
 
-> mkEpic :: Def -> EpicDecl
-> mkEpic (PrimDef p) = p
-> mkEpic (LangDef l) = EpicFn (build l)
-
 > mkProgram :: Defs -> Program
-> mkProgram ds = basic_defs ++ map (\ (n, d) -> (n, mkEpic d)) ds
+> mkProgram ds = basic_defs ++ map (\ (n, d) -> EpicFn n (build d)) ds
 
 > execute :: Defs -> IO ()
 > execute p = run (mkProgram p)
