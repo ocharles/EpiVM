@@ -21,6 +21,7 @@
 >                  foreign_, foreignL_, foreignConst_, foreignConstL_,
 >                  let_, letN_, update_, op_,
 >                  str, int, float, char, bool, unit_, (!.), fn, ref, (+>),
+>                  malloc_,
 >                  -- * Types
 >                  Type, tyInt, tyChar, tyBool, tyFloat, tyString,
 >                  tyPtr, tyUnit, tyAny, tyC,
@@ -261,6 +262,15 @@ Remaining expression constructs
 > foreignConst_, foreignConstL_ :: Type -> String -> Term
 > foreignConst_ t str = term $ ForeignCall t str []
 > foreignConstL_ t str = term $ LazyForeignCall t str []
+
+> -- | Evaluate an expression under manually allocated memory. Creates a pool
+> -- of memory. All allocation is from this pool, and there is no garbage
+> -- collection. The pool is freed after evaluation.
+> malloc_ :: (EpicExpr a, EpicExpr b) => 
+>               a -- ^ Size of block to allocate
+>            -> b -- ^ Expression to evaluate
+>            -> Term
+> malloc_ = exp2 (WithMem FixedPool)
 
  mkCon :: Int -> [Term] -> Term
  mkCon tag args = do args' <- mapM expr args
