@@ -64,18 +64,16 @@ Allow Haskell functions to be used to build expressions.
 > instance EpicExpr Term where
 >     term e = e
 
-> instance (EpicExpr e) => EpicExpr (Expr -> e) where
+> instance EpicExpr e => EpicExpr (Expr -> e) where
 >     term f = do var <- get
 >                 put (var+1)
 >                 let arg = MN "evar" var
 >                 e' <- term (f (R arg))
 >                 return (Lam arg TyAny e')
 
-> instance EpicExpr ([Name], Expr) where
->     term (ns, e) = lam ns e where
->         lam [] e = return e
->         lam (n:ns) e = do e' <- lam ns e
->                           return (Lam n TyAny e')
+> instance EpicExpr e => EpicExpr ([Name], e) where
+>     term (ns, e) = do e' <- term e
+>                       foldM (\e n -> return (Lam n TyAny e)) e' ns
 
 > -- | Build a function definition, with a name supply
 > class EpicFn e where

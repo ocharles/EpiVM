@@ -1,6 +1,6 @@
 \section{The Epic Language}
 
-Epic is based on the untyped $\lambda$-calculus with some extensions.
+Epic is based on the $\lambda$-calculus with some extensions.
 It supports primitives such as strings and integers, as well as tagged
 unions. There are additional control structures for specifying
 evaluation order, primitive loop constructs, and calling foreign
@@ -34,10 +34,10 @@ a sequence of $\vx$.
 & \mid & \RW{case}\:\vt\:\RW{of}\:\vec{\VV{alt}} & \mbox{(Case expressions)}\\
 & \mid & \RW{lazy}(\vt) & \mbox{(Lazy evaluation)} \\
 & \mid & \RW{effect}(\vt) & \mbox{(Evaluate an effectful term)} \\
-& \mid & \RW{while}(\vt,\vt) & \mbox{(While loops)} \\
+& \mid & \RW{while}\:\vt\:\vt & \mbox{(While loops)} \\
 & \mid & \vx := \:\vt\:\RW{in}\:\vt & \mbox{(Variable update)} \\
 & \mid & \RW{foreign}\:\vT\:\VV{str}\:\vec{(\vt\Hab\vT)} & \mbox{(Foreign call)} \\
-& \mid & \RW{malloc}\:\ve\:\ve & \mbox{(Manual allocation)} \\
+& \mid & \RW{malloc}\:\vt\:\vt & \mbox{(Manual allocation)} \\
 & \mid & \vi \mid \vf \mid \vc \mid \vb \mid \VV{str} & \mbox{(Constants)} \\
 \\
 \VV{alt} & ::= &
@@ -68,8 +68,8 @@ a sequence of $\vx$.
 \mid \TC{String} & \mbox{(Primitives)} \\
  & \mid & \TC{Unit} & \mbox{(Unit type)} \\
  & \mid & \TC{Ptr} & \mbox{(Foreign pointers)} \\
- & \mid & \TC{Fun} & \mbox{(Any function type)} \\
- & \mid & \TC{Data} & \mbox{(Any data type)} \\
+% & \mid & \TC{Fun} & \mbox{(Any function type)} \\
+% & \mid & \TC{Data} & \mbox{(Any data type)} \\
  & \mid & \TC{Any} & \mbox{(Polymorphic type)} \\
 \end{array}
 }
@@ -80,26 +80,289 @@ a sequence of $\vx$.
 \subsection{Definitions}
 
 An Epic program consists of a sequence of \remph{untyped} function
-definitions, with zero or more arguments, 
+definitions, with zero or more arguments. The entry point is the
+function $\VV{main}$, which takes no arguments. For example:
 
-Expressions. \texttt{let}, \texttt{case}, \texttt{lazy}
+\DM{
+\begin{array}{ll}
+\VV{factorial}(\vx)&\:=\:
+\RW{if}\:\vx==0\:\AR{\RW{then}\:1\\
+\RW{else}\:\vx\:\times\:\VV{factorial}(\vx-1)}
+\medskip
+\\
+\VV{main}()&\:=\:\VV{putStrLn}(\VV{intToString}(\VV{factorial}(10)))
+\end{array}
+} 
 
-\subsection{Types}
+\subsubsection*{Values}
 
-\texttt{Int}, \texttt{Float}, \texttt{Bool}, \texttt{Data}, \texttt{Ptr},
-\texttt{Unit}. Unchecked! Used for marshalling foreign functions only.
+Values in an Epic program are either one of the primitives (an
+integer, floating point number, character, boolean or string) or a
+\remph{tagged union}. Tagged unions are of the form $\DC{Con}
+\vi(\vt_1,\ldots,\vt_n)$, where $\vi$ is the \remph{tag} and the $\ta$
+are the \remph{fields}. The name $\DC{Con}$ is to suggest
+``Constructor''. For example, we could represent a list using tagged
+unions:
 
-Run-time representation (31 bit ints).
+\begin{itemize}
+\item $\DC{Con}\:0()$ representing the empty list.
+\item $\DC{Con}\:1(\vx,\:\vxs)$ representing a cons cell, where $\vx$
+  is the element and $\vxs$ is the tail of the list.
+\end{itemize}
 
-\subsection{Imperative Features}
+Tagged unions are inspected either using field projection ($\vt!\vi$
+projects the $\vi$th field from a tagged union $\vt$) or by case
+analysis. For example, to append two lists:
 
-Motivation: no need to limit ourselves to functional languages, and in
-some situations may help a high level language implement some optimisations.
-\texttt{while}, variable update.
+\DM{
+\AR{
+\VV{append}(\vxs,\vys)\:=
+\RW{case}\:\vxs\:\RW{of}\\
+\hg\hg\begin{array}{ll}
+\DC{Con}\:0()&\cq\:\vys\\
+\DC{Con}\:1(\vx,\vxs')&\cq\:\DC{Con}\:1(\vx,\VV{append}(\vxs',\vys))
+\end{array}
+}
+}
+
+\subsubsection*{Evaluation Strategy}
+
+By default, expressions are evaluated eagerly (in applicative order),
+i.e. arguments to functions and tagged unions are evaluated
+immediately, left to right. Evaluation can instead be delayed using
+the $\RW{lazy}$ construct. An expression $\RW{lazy}(\vt)$ will not be
+evaluated until it is required by one of:
+
+\begin{itemize}
+\item Inspection in a $\RW{case}$ expression or the condition in an
+  $\RW{if}$ statement.
+\item Field projection.
+\item Being passed to a foreign function.
+\item Explicit evaluation with $\RW{effect}$. This evaluates
+  side-effecting code (and does not update the thunk).
+\end{itemize}
+
+\noindent
+Using $\RW{lazy}$ we can build an infinite list of values, ensuring
+that a value will not be added to the list until it is needed:
+
+\DM{
+\AR{
+\VV{countFrom}(\vx)\: = \:\DC{Cons}\:1(\vx,\:\RW{lazy}(\VV{countFrom}(\vx+1)))
+}
+}
+
+We can safely write a function which takes the first $\vn$ values from
+such a list, since the tail of the list will not be evaluated until it
+is needed:
+
+\DM{
+\AR{
+\VV{take}(\vn,\vxs)\: =\: \RW{case}\:\vxs\:\RW{of}\\
+\hg\begin{array}{ll}
+\DC{Con}\:0() & \cq\: \DC{Con}\:0() \\
+\DC{Con}\:1(\vx,\vxs') & \cq\: \AR{
+\RW{if}\:\vn == 0\:
+\RW{then}\:\DC{Con}\:0() \\
+\hg\RW{else}\:\DC{Con}\:1(\vx,\VV{take}(\vn-1, \vxs'))
+}
+\end{array}          
+\medskip
+\\
+\VV{vals}()\:=\:\VV{take}(10, \VV{countFrom}(1))
+}
+}
+
+\subsubsection*{Higher order functions}
+
+Finally, expressions may contain $\lambda$ and $\RW{let}$
+bindings. Higher order functions such as $\VV{map}$ are also permitted:
+
+\DM{
+\AR{
+\VV{map}(\vf,\vxs)\:=\:
+\RW{case}\:\vxs\:\RW{of}\\
+\hg\hg\begin{array}{ll}
+\DC{Con}\:0() & \cq\:\DC{Con}\:0()\\
+\DC{Con}\:1(\vx,\vxs') & \cq\:\DC{Con}\:1(\vf(\vx), \VV{map}(\vf,\vxs'))
+\end{array}
+\medskip
+\\
+\VV{evens}(\vn)\:=\:\RW{let}\:\AR{\VV{nums}\:=\:
+\VV{take}(\vn, \VV{countFrom}(1))\:\RW{in}\\
+\VV{map}(\lambda\vx\SC\vx\:\times \:2, \VV{nums})
+}
+}
+}
 
 \subsection{Foreign Functions}
 
-Calling, exporting.
+Most programs eventually need to interact with the operating
+system. Epic provides a lightweight foreign function interface which
+allows interaction with external C code. Each primitive type
+corresponds to a C type, as shown in Table \ref{epicctypes}.  Most of
+the conversions are straightforward mappings between the
+languages. Otherwise, $\TC{Bool}$ is represented by an C \texttt{int},
+and $\TC{Unit}$ is used for the return type of \texttt{void}
+functions. $\TC{Ptr}$ is the type of pointer values originating in
+C. Values can also be passed in their Epic representation
+(\texttt{Closure*}) but the details are beyond the scope of this paper.
+
+\begin{table}
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+Epic type & C Type \\
+\hline
+$\TC{Int}$  & \texttt{int} \\
+$\TC{Char}$ & \texttt{char} \\
+$\TC{Bool}$ & \texttt{int} \\
+$\TC{Float}$ & \texttt{double} \\
+$\TC{String}$ & \texttt{char*} \\
+$\TC{Ptr}$ & \texttt{void*} \\
+$\TC{Unit}$ & \texttt{void} \\
+$\TC{Any}$ & \texttt{Closure*} \\
+\hline
+\end{tabular}
+\end{center}
+\caption{Epic to C type conversion}
+\label{epicctypes}
+\end{table}
+
+Epic values are represented differently from C values, so argument
+values must be converted before making a foreign call, and the return
+value converted back. Since Epic does no type checking or inference,
+a foreign call requires the argument and return types to be given
+explicitly. For example, consider the C sine function:
+
+\begin{SaveVerbatim}{csin}
+
+double sin(double x);
+
+\end{SaveVerbatim}
+\useverb{csin}
+
+\noindent
+We can call this function from Epic by giving the C name, the return
+type (an Epic $\TC{Float}$) and the argument type (also an Epic
+$\TC{Float}$).
+
+\DM{
+\VV{sin}(\vx)\:=\:\RW{foreign}\:\TC{Float}\:\mathtt{"sin"}\:(\vx\Hab\TC{Float})
+}
+
+\noindent
+Often, dealing with foreign functions requires handling data types
+which originate in C. For example, opening a file uses the
+\texttt{fopen} function, which returns a pointer to the C type
+\texttt{FILE}:
+
+\begin{SaveVerbatim}{cfopen}
+
+FILE* fopen(char* filename, char* mode); 
+
+\end{SaveVerbatim}
+\useverb{cfopen}
+
+\noindent
+We can use this function directly from Epic, using the $\TC{Ptr}$
+type:
+
+\DM{
+\VV{fopen}(\vf,\vm)\:=\:\RW{foreign}\:\TC{Ptr}\:\mathtt{"fopen"}(\vf:\TC{String},
+\vm:\TC{String})
+}
+
+\noindent
+The $\TC{String}$ annotations in the foreign call ensure that the Epic
+string representation will be passed to C as a \texttt{char*}. Other
+file operations, such as writing or closing the file can refer
+directly to the file handle returned as a $\TC{Ptr}$: 
+
+\DM{
+\AR{
+\VV{fputs}(\vx,\vh)\:=\:\RW{foreign}\:\TC{Unit}\:\mathtt{"fputs"}(\vx:\TC{String},\vh:\TC{Ptr})\\
+\VV{fclose}(\vh)\:=\:\RW{foreign}\:\TC{Unit}\:\mathtt{"fclose"}(\vh:\TC{Ptr})\\
+}
+}
+
+\noindent
+Many foreign functions have side effects (in particular, I/O). Epic
+assumes that the high level language will arrange for side-effecting
+functions to be evaluated in the correct order. For this reason, it is
+important to understand the default evaluation strategy.
+
+\subsubsection*{A note on memory management}
+
+When working with foreign functions it is important to consider how
+external code interacts with the garbage collector. In particular,
+\remph{copying} garbage collectors can be problematic because there is
+a danger that a value referenced by external code may be moved, and
+there is no way for the collector to identify and move every reference
+in this code. This could cause a problem if the external library uses
+callbacks to Epic functions.
+
+The current implementation uses a non-moving collector, the Boehm
+conservative collector for C~\cite{boehm-gc}, thus avoiding any
+problems. However, this is not a long term solution, as this kind of
+collector does not generally perform well for programs which create a
+lot of short lived objects (of which most functional programs are an
+example). Any future garbage collector for Epic will need to ensure
+that values originating in Epic are not copied once passed to foreign
+code.
+
+\subsection{Low Level Features}
+
+Epic emphasises control over safety, and therefore provides some low
+level features to give language implementations more control over
+generated code.  A high level language may wish to use these features
+in some performance critical contexts, whether for sequencing side
+effects, implementing optimisations, or to provide run-time support
+code.
+
+\subsubsection*{Imperative features}
+
+Epic allows sequencing, $\RW{while}$ loops and variable update. Since
+the default evaluation strategy is strict, sequencing can be achieved
+simply with \RW{let} bindings, discarding the variable:
+
+\DM{
+\begin{array}{lll}
+\VV{main}\:= &
+\RW{let}\:\_\:= &
+\VV{putStr}(\mbox{\texttt{"Enter your name: "}})\:\RW{in}\\
+& \RW{let}\:\vn\:= &
+\VV{getStr}()\:\RW{in} \\
+& & \VV{putStrLn}(\VV{append}(\mbox{\texttt{"Hello "}}, \vn))\\
+\end{array}\\
+}
+
+\noindent
+We can also use \RW{while} loops, and update variables. Variable
+update ($\vx\: :=\:\vt_1\:\RW{in}\:\vt_2$) behaves like a $\RW{let}$
+binding, except that $\vx$ must already be in scope, and the previous
+value of $\vx$ is updated to be $\vt_2$. We can use these to write an
+imperative program such as the following, which prints numbers from 1
+to 10:
+
+\DM{
+\VV{main}\:=\:\RW{let}\:\AR{
+\vc\:=\:0\:\RW{in}\\
+\RW{while}\:(\vc<10)\:\\
+\hg(\vc:=\vc+1\:\RW{in}\\
+\hg\:\VV{putStrLn}(\VV{intToSring}(\vc)))
+}
+}
+
+\subsubsection*{Memory allocation}
+
+The $\RW{malloc}$ construct allows manual memory allocation. The
+behaviour of $\RW{malloc}\:\vn\:\vt$ is to create a fixed pool of
+$\vn$ bytes, and allocate only from this pool when evaluating
+$\vt$. When evaluation is complete, the pool is freed, and the result
+copied. This can be valuable where an upper bound on memory usage can
+be predicted accurately (whether manually or automatically) as it
+reduces the garbage collection overhead.
 
 \subsection{Haskell API}
 
@@ -108,3 +371,256 @@ application (\texttt{@@}). Underscore convention -- it's for primitive
 language constructs, arises because we can't have ``let'', ``if'',
 ``case'' etc as function names, and extended to other primitives such
 as operators, foreign calls (anything that'd be a keyword in general).
+
+\subsubsection*{Programs and expressions}
+
+Build expressions, with a name supply. \texttt{Expr} is the internal
+(abstract) representation of Epic expressions:
+
+\begin{SaveVerbatim}{exprclass}
+
+type Term = State Int Expr
+
+class EpicExpr e where
+    term :: e -> Term
+
+\end{SaveVerbatim}
+\useverb{exprclass}
+
+Instances for raw expressions and terms. More interestingly, an
+instance for functions which allows Haskell functions to be used to
+build Epic functions without worring about scope. \texttt{R} and
+\texttt{Lam} are internal representations for references and $\lambda$
+bindings respectively.
+
+\begin{SaveVerbatim}{exprinstance}
+
+instance (EpicExpr e) => EpicExpr (Expr -> e) where
+    term f = do var <- get
+                put (var+1)
+                let arg = MN "evar" var
+                e' <- term (f (R arg))
+                return (Lam arg e')
+
+\end{SaveVerbatim}
+\useverb{exprinstance}
+
+\noindent
+\textbf{Aside:}
+Internally, names are separated into user supplied names, and names
+invented by the machine. Using machine names guarantees we won't clash
+with a user name, and we can give an annotation (\texttt{"evar"} here)
+which says where the name arose.
+
+\begin{SaveVerbatim}{epicnames}
+
+data Name = UN String     -- user name
+          | MN String Int -- machine generated name
+
+\end{SaveVerbatim}
+\useverb{epicnames}
+
+It can be more convenient to give explicit names for $\lambda$
+bindings, so we declare an instance to allow that:
+
+\begin{SaveVerbatim}{exprnamed}
+
+instance EpicExpr e => EpicExpr ([Name], e) where
+    term (ns, e) = do 
+        e' <- term e
+        foldM (\e n -> return (Lam n e)) e' ns
+
+\end{SaveVerbatim}
+\useverb{exprnamed}
+
+Both forms can be mixed freely.
+A program is a collection of named Epic declarations:
+
+\begin{SaveVerbatim}{eprogs}
+
+data EpicDecl = forall e. EpicExpr e => EpicFn Name e
+              | ...
+
+type Program = [EpicDecl]
+
+\end{SaveVerbatim}
+\useverb{eprogs}
+
+\noindent
+Epic declarations are usually just a function (\texttt{EpicFn}) but
+can also be used to include C header files, declare libraries for
+linking and declare types for exporting as C types. The library also
+provides a number of built in definitions for some common operations
+such as outputting strings and converting data types:
+
+\begin{SaveVerbatim}{bdefs}
+
+basic_defs :: [EpicDecl]
+
+\end{SaveVerbatim}
+\useverb{bdefs}
+
+We can compile a collection of definitions to an executable, or simply
+execute them directly. Execution begins with the function called
+\texttt{"main"} --- Epic reports an error if this function is not
+defined:
+
+\begin{SaveVerbatim}{compepic}
+
+compile :: Program -> FilePath -> IO ()
+run     :: Program -> IO ()
+
+\end{SaveVerbatim}
+\useverb{compepic}
+
+\subsubsection*{Building expressions}
+
+We've seen $\lambda$ bindings, using either Haskell's $\lambda$ or
+pairing the names with their scope.
+
+General form is that we build a \texttt{Term} (i.e. an expression
+managing the name supply) by combining arbitrary Epic expressions
+(i.e. instances of \texttt{EpicExpr}).
+
+\begin{SaveVerbatim}{appapi}
+
+(@@) :: (EpicExpr f, EpicExpr a) => f -> a -> Term
+
+\end{SaveVerbatim}
+\useverb{appapi}
+
+Convention: Epic keywords are represented by a Haskell function which
+is the keyword with an underscore suffix --- we can't reuse Haskell
+keywords after all!
+
+\begin{SaveVerbatim}{ifexp}
+
+if_ :: (EpicExpr a, EpicExpr t, EpicExpr e) =>
+       a -> t -> e -> Term
+
+\end{SaveVerbatim}
+\useverb{ifexp}
+
+For $\RW{let}$ bindings, we can either use higher order syntax or bind
+an explicit name:
+
+\begin{SaveVerbatim}{letapi}
+
+let_  :: (EpicExpr e) => 
+         e -> (Expr -> Term) -> Term
+letN_ :: (EpicExpr val, EpicExpr scope) =>
+         Name -> val -> scope -> Term
+
+\end{SaveVerbatim}
+\useverb{letapi}
+
+Shorthand if we're just using lets to sequence then throw away the
+bound thing:
+
+\begin{SaveVerbatim}{seqapi}
+
+(+>) :: (EpicExpr c) => c -> Term -> Term
+(+>) c k = let_ c (\x -> k)
+
+\end{SaveVerbatim}
+\useverb{seqapi}
+
+Name management:
+
+\begin{SaveVerbatim}{nameapi}
+
+ref  :: Name -> Term
+name :: String -> Name
+fn   :: String -> Term
+
+\end{SaveVerbatim}
+\useverb{nameapi}
+
+Building constructor forms. \texttt{tuple\_} is provided as a
+shorthand if the tag is not important.
+
+\begin{SaveVerbatim}{conapi}
+
+con_   :: Int -> Term
+tuple_ :: Term
+
+\end{SaveVerbatim}
+\useverb{conapi}
+
+\subsubsection*{Case analysis}
+
+Case expressions:
+
+\begin{SaveVerbatim}{caseapi}
+
+case_ :: (EpicExpr e) => e -> [Case] -> Term
+
+\end{SaveVerbatim}
+\useverb{caseapi}
+
+Building case alternatives for constructors. We use the same trick as
+we did for $\lambda$-bindings, either allowing Haskell to manage to
+scope of constructor arguments, or giving names explicitly, or a mixture.
+
+\begin{SaveVerbatim}{conalt}
+
+class Alternative e where
+    mkAlt :: Tag -> e -> Case
+
+instance Alternative Expr
+instance Alternative Term
+
+instance Alternative e => Alternative (Expr -> e)
+instance Alternative e => Alternative ([Name], e)
+
+\end{SaveVerbatim}
+\useverb{conalt}
+
+We can build case alternatives for constructor forms, tuples, or
+integer constants, as well as a default case if all other alternatives
+fail to match. In each of the following, \texttt{e} is the right hand
+side. For constructors and tuples, arguments may be bound in the
+match. (We have to use \texttt{Alternative} rather than
+\texttt{EpicExpr} to ensure that we get arguments bound in the match,
+rather than a $\lambda$ binding on the right hand side).
+
+\begin{SaveVerbatim}{altsapi}
+
+con         :: Alternative e => Int -> e -> Case
+tuple       :: Alternative e =>        e -> Case
+constcase   :: EpicExpr e    => Int -> e -> Case
+defaultcase :: EpicExpr e    =>        e -> Case
+
+\end{SaveVerbatim}
+\useverb{altsapi}
+
+\subsubsection*{Example --- \texttt{map}}
+
+We have enough to write a simple example now. Here is the $\VV{map}$
+function from earlier. Note the distinction between \texttt{con\_},
+used to build a constructor, and \texttt{con}, used to introduce a
+match alternative.
+
+\begin{SaveVerbatim}{mapex}
+
+map_ :: Expr -> Expr -> Term
+map_ f xs = case_ xs 
+   [con 0 (con_ 0),
+    con 1 (\ (x :: Expr) (xs' :: Expr)
+      -> con_ 1 @@ (f @@ x) @@ (fn "map" @@ f @@ xs'))]
+
+\end{SaveVerbatim}
+\useverb{mapex}
+
+In the recursive call, we refer to the function by an Epic name,
+rather than a Haskell name. So we need to ensure that these names are
+consistent. We can declare that the name \texttt{"map"} refers to the
+definition \texttt{map\_}:
+
+\begin{SaveVerbatim}{mapdef}
+
+mapDef :: EpicDecl
+mapDef = EpicFn (name "map") map_
+
+\end{SaveVerbatim}
+\useverb{mapdef}

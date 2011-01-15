@@ -78,22 +78,16 @@ type Defs = [(Name, Lang)]
 Our aim is to convert a collection of \texttt{Defs} into an
 executable, using one of the following functions from the Epic API:
 
-\begin{SaveVerbatim}{compepic}
-
-compile :: Program -> FilePath -> IO ()
-run     :: Program -> IO ()
-
-\end{SaveVerbatim}
 \useverb{compepic}
 
 \noindent
 Given an Epic \texttt{Program}, \texttt{compile} will generate an
 executable, and \texttt{run} will generate an executable then run it.
-A program is a collection of named Epic declarations:
+Recall that a program is a collection of named Epic declarations:
 
 \begin{SaveVerbatim}{eprogs}
 
-data EpicDecl = forall e. EpicFn e => EpicFn Name e
+data EpicDecl = forall e. EpicExpr e => EpicFn Name e
               | ...
 
 type Program = [EpicDecl]
@@ -101,23 +95,8 @@ type Program = [EpicDecl]
 \end{SaveVerbatim}
 \useverb{eprogs}
 
-\noindent
-Epic declarations are usually just an Epic function (\texttt{EpicFn})
-but can also be used to include C header files, declare libraries for
-linking and declare types for exporting as C types. The library also
-provides a number of built in definitions for some common operations
-such as outputting strings and converting data types:
-
-\begin{SaveVerbatim}{bdefs}
-
-basic_defs :: [EpicDecl]
-
-\end{SaveVerbatim}
-\useverb{bdefs}
-
-\noindent
 Our goal, then, is to convert a \texttt{Lang} definition into
-something which is an instance of \texttt{EpicFn}. We use
+something which is an instance of \texttt{EpicExpr}. We use
 \texttt{Term}, which is an Epic expression which carries a name
 supply. Most of the term construction functions in the Epic API return
 a \texttt{Term}.
@@ -200,9 +179,8 @@ build (Op Append l r)
 \noindent
 Given \texttt{build}, we can translate a collection of HOAS
 definitions into an Epic program, add the built-in Epic definitions
-and execute it directly. Execution begins with the function called
-\texttt{"main"} --- Epic reports an error if this function is not
-defined.
+and execute it directly. Recall that there must be a function called
+\texttt{"main"} or Epic will report an error.
 
 \begin{SaveVerbatim}{lmain}
 
