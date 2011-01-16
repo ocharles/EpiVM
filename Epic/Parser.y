@@ -12,6 +12,8 @@ import Epic.Lexer
 }
 
 %name mkparse Program
+%name mkexpr  Expr
+%name mkdecl  Declaration
 
 %tokentype { Token }
 %monad { P } { thenP } { returnP }
@@ -281,6 +283,12 @@ mkExtern n tys ret ns = Extern n ret tys
 
 parse :: String -> FilePath -> Result [Decl]
 parse s fn = mkparse s fn 1
+
+parseExpr :: String -> Result Expr
+parseExpr s = mkexpr s "[expr]" 1
+
+parseDecl :: String -> Result Decl
+parseDecl s = mkdecl s "[decl]" 1
 
 parseFile :: FilePath -> IO (Result [Decl])
 parseFile fn = do s <- readFile fn

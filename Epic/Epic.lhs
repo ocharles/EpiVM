@@ -48,6 +48,7 @@ Combinators for constructing an expression
 
 > import Epic.Language
 > import Epic.Compiler
+> import Epic.Parser
 
 Allow Haskell functions to be used to build expressions.
 
@@ -63,6 +64,11 @@ Allow Haskell functions to be used to build expressions.
 
 > instance EpicExpr Term where
 >     term e = e
+
+> instance EpicExpr String where
+>     term s = case parseExpr s of
+>                Success t -> return t
+>                Failure err f l -> fail err
 
 > instance EpicExpr e => EpicExpr (Expr -> e) where
 >     term f = do var <- get
