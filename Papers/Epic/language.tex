@@ -49,7 +49,8 @@ a sequence of $\vx$.
 \\
 \begin{array}{rcll}
 \VV{op} & ::= & + \mid - \mid \times \mid / \mid\:
-==\: \mid \:<\: \mid \:\le\: \mid \:>\: \mid \:\ge \\
+==\: \mid \:<\: \mid \:\le\: \mid \:>\: \mid \:\ge \: \mid \: << \:
+\mid \: >>\\
 \end{array}
 \medskip
 \\
@@ -93,6 +94,14 @@ function $\VV{main}$, which takes no arguments. For example:
 \VV{main}()&\:=\:\VV{putStrLn}(\VV{intToString}(\VV{factorial}(10)))
 \end{array}
 } 
+
+\noindent
+The right hand side of a definition is an expression consisting of
+function applications, operators (arithmetic, comparison, and
+bit-shifting), bindings and control structures (some low level and
+imperative).  Functions may be \remph{partially applied}, i.e. applied
+to fewer arguments than they require. Evaluating a partially applied
+function results in a function which expects the remaining arguments.
 
 \subsubsection*{Values}
 
@@ -280,10 +289,10 @@ file operations, such as writing or closing the file can refer
 directly to the file handle returned as a $\TC{Ptr}$: 
 
 \DM{
-\AR{
-\VV{fputs}(\vx,\vh)\:=\:\RW{foreign}\:\TC{Unit}\:\mathtt{"fputs"}(\vx:\TC{String},\vh:\TC{Ptr})\\
-\VV{fclose}(\vh)\:=\:\RW{foreign}\:\TC{Unit}\:\mathtt{"fclose"}(\vh:\TC{Ptr})\\
-}
+\begin{array}{ll}
+\VV{fputs}(\vx,\vh) & =\:\RW{foreign}\:\TC{Unit}\:\mathtt{"fputs"}(\vx:\TC{String},\vh:\TC{Ptr})\\
+\VV{fclose}(\vh) & =\:\RW{foreign}\:\TC{Unit}\:\mathtt{"fclose"}(\vh:\TC{Ptr})\\
+\end{array}
 }
 
 \noindent
@@ -327,13 +336,13 @@ the default evaluation strategy is strict, sequencing can be achieved
 simply with \RW{let} bindings, discarding the variable:
 
 \DM{
-\begin{array}{lll}
+\begin{array}{llll}
 \VV{main}\:= &
-\RW{let}\:\_\:= &
+\RW{let}\:\_ & = &
 \VV{putStr}(\mbox{\texttt{"Enter your name: "}})\:\RW{in}\\
-& \RW{let}\:\vn\:= &
+& \RW{let}\:\vn & = &
 \VV{getStr}()\:\RW{in} \\
-& & \VV{putStrLn}(\VV{append}(\mbox{\texttt{"Hello "}}, \vn))\\
+& & & \VV{putStrLn}(\VV{append}(\mbox{\texttt{"Hello "}}, \vn))\\
 \end{array}\\
 }
 
@@ -366,11 +375,12 @@ reduces the garbage collection overhead.
 
 \subsection{Haskell API}
 
-Function names. Distinction between Haskell application and Epic
-application (\texttt{@@}). Underscore convention -- it's for primitive
-language constructs, arises because we can't have ``let'', ``if'',
-``case'' etc as function names, and extended to other primitives such
-as operators, foreign calls (anything that'd be a keyword in general).
+The primary interface to Epic is through a Haskell API, which is used
+to build expressions and programs, and to compile them to executables.
+Implementing a compiler for a high level language is then a matter of
+converting the abstract syntax of a high level program into an Epic
+program, through these ``compiler combinators'', and implementing any
+run-time support as Epic functions.
 
 \subsubsection*{Programs and expressions}
 
@@ -489,9 +499,27 @@ managing the name supply) by combining arbitrary Epic expressions
 \end{SaveVerbatim}
 \useverb{appapi}
 
+Distinction between Haskell application and Epic
+application (\texttt{@@}).
+
+Operators. Separate versions for floating point and integer.
+
+\begin{SaveVerbatim}{opsapi}
+
+plus_, minus_, times_, divide_,    :: Op
+plusF_, minusF_, timesF_, divideF_ :: Op
+lt_, lte_, gt_, gte_,              :: Op
+ltF_, lteF_, gtF_, gteF_,          :: Op
+shiftl_, shiftr_                  :: Op
+
+\end{SaveVerbatim}
+\useverb{opsapi}
+
 Convention: Epic keywords are represented by a Haskell function which
-is the keyword with an underscore suffix --- we can't reuse Haskell
-keywords after all!
+is the keyword with an underscore suffix. Arises because we can't have
+``let'', ``if'', ``case'' etc as function names, and extended to other
+primitives such as operators, foreign calls (anything that'd be a
+keyword in general).
 
 \begin{SaveVerbatim}{ifexp}
 
@@ -594,7 +622,7 @@ defaultcase :: EpicExpr e    =>        e -> Case
 \end{SaveVerbatim}
 \useverb{altsapi}
 
-\subsubsection*{Example --- \texttt{map}}
+\subsubsection*{A complete example}
 
 We have enough to write a simple example now. Here is the $\VV{map}$
 function from earlier. Note the distinction between \texttt{con\_},
@@ -624,3 +652,80 @@ mapDef = EpicFn (name "map") map_
 
 \end{SaveVerbatim}
 \useverb{mapdef}
+
+We have a function to add up all the integers in a list:
+
+\begin{SaveVerbatim}{sumex}
+
+sum_ :: Expr -> Term
+sum_ xs = case_ xs
+           [con 0 (int 0),
+            con 1 (\ (x :: Expr) (xs' :: Expr) ->
+                       op_ plus_ x (fn "sum" @@ xs'))]
+
+\end{SaveVerbatim}
+\useverb{sumex}
+
+This constructs the Epic function:
+
+\DM{
+\AR{
+\VV{sum}(\vxs)\:=\:
+\RW{case}\:\vxs\:\RW{of}\\
+\hg\hg\begin{array}{ll}
+\DC{Con}\:0() & \cq\:0\\
+\DC{Con}\:1(\vx,\vxs') & \cq\:\vx\:+\:\VV{sum}(\vxs')
+\end{array}
+}
+}
+
+We write a test funtion which doubles all the elements in a list, then
+computes the sum of the result. Note that we have written the function
+argument to map as an inline function. The main program simply outputs
+the result of this function.
+
+\begin{SaveVerbatim}{testex}
+
+test_ = fn "sum" @@ 
+       (fn "map" @@ \ (x :: Expr) -> op_ times_ x (int 2) 
+                 @@ (con_ 1 @@ (int 5) @@
+                    (con_ 1 @@ (int 10) @@ con_ 0)))
+
+main_ = fn "putStrLn" @@ (fn "intToString" @@ fn "test")
+
+\end{SaveVerbatim}
+\useverb{testex}
+
+\texttt{test\_} constructs the Epic function:
+
+\DM{
+\VV{test}\:=\:\VV{sum}(\VV{map}
+\AR{
+(\lambda\vx.x\:\times\:2, \\
+\:\DC{Con}\:1(5,\DC{Con}\:1(10,\DC{Con}\:0()))))
+}
+}
+
+Finally, we give a complete list of definitions, mapping concrete
+names to the functions we've written.
+
+\begin{SaveVerbatim}{alldefs}
+
+defs = basic_defs ++ [EpicFn (name "main") main_, 
+                      EpicFn (name "map") map_,
+                      EpicFn (name "sum") sum_,
+                      EpicFn (name "test") test_]
+
+\end{SaveVerbatim}
+\useverb{alldefs}
+
+To compile and run this, we use the \texttt{run} function from the
+Epic API, which builds an executable and runs it. The following
+program outputs \texttt{30}.
+
+\begin{SaveVerbatim}{mainex}
+
+main = run defs
+
+\end{SaveVerbatim}
+\useverb{mainex}
