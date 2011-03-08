@@ -73,6 +73,7 @@ import Epic.Lexer
       '-'             { TokenMinus }
       '*'             { TokenTimes }
       '/'             { TokenDivide }
+      '%'             { TokenMod }
       fplus           { TokenFPlus }
       fminus          { TokenFMinus }
       ftimes          { TokenFTimes }
@@ -114,7 +115,7 @@ import Epic.Lexer
 %left '<' '>' le ge flt fgt fle fge
 %left shl shr
 %left '+' '-' fplus fminus
-%left '*' '/' ftimes fdiv
+%left '*' '/' ftimes fdiv '%'
 %left NEG
 %left '!'
 %nonassoc '('
@@ -225,6 +226,7 @@ MathExpr : Expr '+' Expr { Op Plus $1 $3 }
          | '-' Expr %prec NEG { Op Minus (Const (MkInt 0)) $2 }
          | Expr '*' Expr { Op Times $1 $3 }
          | Expr '/' Expr { Op Divide $1 $3 }
+         | Expr '%' Expr { Op Modulo $1 $3 }
 
          | Expr fplus Expr { Op FPlus $1 $3 }
          | Expr fminus Expr { Op FMinus $1 $3 }

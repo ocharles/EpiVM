@@ -136,7 +136,8 @@ Get the arity of a definition in the context
 > data Allocator = FixedPool | GrowablePool
 >   deriving Eq
 
-> data Op = Plus | Minus | Times | Divide | OpEQ | OpLT | OpLE | OpGT | OpGE
+> data Op = Plus | Minus | Times | Divide | Modulo
+>         | OpEQ | OpLT | OpLE | OpGT | OpGE
 >         | FPlus | FMinus | FTimes | FDivide
 >         | OpFEQ | OpFLT | OpFLE | OpFGT | OpFGE
 >         | ShL  | ShR

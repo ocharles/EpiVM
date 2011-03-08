@@ -79,6 +79,7 @@
 >       | TokenMinus
 >       | TokenTimes
 >       | TokenDivide
+>       | TokenMod
 >       | TokenFPlus
 >       | TokenFMinus
 >       | TokenFTimes
@@ -179,7 +180,8 @@
 > lexer cont ('|':cs) = cont TokenBar cs
 > lexer cont ('.':cs) = cont TokenDot cs
 > lexer cont ('\\':cs) = cont TokenLam cs
-> lexer cont ('%':cs) = lexSpecial cont cs
+> lexer cont ('%':c:cs) | isAlpha c = lexSpecial cont (c:cs)
+> lexer cont ('%':cs) = cont TokenMod cs
 > lexer cont (c:cs) = lexError c cs
  
 > lexError c s f l = failP (show l ++ ": Unrecognised token '" ++ [c] ++ "'\n") s f l
@@ -284,7 +286,7 @@
 >       ("fixed",rest) -> cont TokenFixed rest
 >       ("growable",rest) -> cont TokenGrowable rest
 >       ("unused", rest) -> cont TokenUnused rest
->       (thing,rest) -> lexError '%' rest
+>       (thing,rest) -> cont TokenMod (thing++rest)
  
 > mkname :: String -> Token
 > mkname c = TokenName (UN c)

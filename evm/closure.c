@@ -76,7 +76,7 @@ void dumpClosureA(Closure* c, int rec) {
 	printf("BIGFLOAT[");
 	break;
     case STRING:
-	printf("STRING[");
+	printf("STRING[%s", ((char*)c->info));
 	break;
     case UNIT:
 	printf("UNIT[");
@@ -919,7 +919,7 @@ double GETFLOAT(void* x)
     return *((double*)(((VAL)x)->info));
 }
 
-void* MKSTR(char* x)
+void* MKSTR(const char* x)
 {
 //    VAL c = EMALLOC(sizeof(Closure)+strlen(x)+sizeof(char)+1); //MKCLOSURE;
     VAL c = EMALLOC(sizeof(Closure));
@@ -929,7 +929,7 @@ void* MKSTR(char* x)
 
 // Since MKSTR is used to build strings from foreign calls, the string
 // itself will already have been allocated so we just want the closure.
-    c->info=x;
+    c->info=(void*)x;
     EREADY(c);
     return c;
 }

@@ -384,8 +384,14 @@ run-time support as Epic functions.
 
 \subsubsection*{Programs and expressions}
 
-Build expressions, with a name supply. \texttt{Expr} is the internal
-(abstract) representation of Epic expressions:
+The API allows the building of Epic programs with an Embedded Domain
+Specific Language (EDSL) style interface, i.e. we try to exploit
+Haskell's syntax as far as possible. There are several
+possible representations of Epic expressions.
+\texttt{Expr} is the internal abstract representation, and
+\texttt{Term} is a representation which carries a name supply. We have
+a type class \texttt{EpicExpr} which provides a function \texttt{term}
+for building a concrete expression using a name supply:
 
 \begin{SaveVerbatim}{exprclass}
 
@@ -397,15 +403,20 @@ class EpicExpr e where
 \end{SaveVerbatim}
 \useverb{exprclass}
 
-Instances for raw expressions and terms. More interestingly, an
-instance for functions which allows Haskell functions to be used to
-build Epic functions without worring about scope. \texttt{R} and
+There are straightforward instances of \texttt{EpicExpr} for the
+internal representation \texttt{Expr} and \texttt{Term}. There is also
+an instance for \texttt{String}, which parses concrete syntax, which
+is beyond the scope of this paper. More interestingly, we can build an
+instance of the type class which allows Haskell functions to be used
+to build Epic functions.  This means we can use Haskell names for Epic
+references, and not need to worry about scoping or ambiguous name
+choices. In the following instance definition, \texttt{R} and
 \texttt{Lam} are internal representations for references and $\lambda$
 bindings respectively.
 
 \begin{SaveVerbatim}{exprinstance}
 
-instance (EpicExpr e) => EpicExpr (Expr -> e) where
+instance EpicExpr e => EpicExpr (Expr -> e) where
     term f = do var <- get
                 put (var+1)
                 let arg = MN "evar" var
@@ -418,9 +429,10 @@ instance (EpicExpr e) => EpicExpr (Expr -> e) where
 \noindent
 \textbf{Aside:}
 Internally, names are separated into user supplied names, and names
-invented by the machine. Using machine names guarantees we won't clash
-with a user name, and we can give an annotation (\texttt{"evar"} here)
-which says where the name arose.
+invented by the machine. In this way, we can be sure that machine
+generated names will never clash with a user defined name. The
+\texttt{String} argyment to \texttt{MN} allows us to give an
+annotation (\texttt{"evar"} here) which says where the name arose.
 
 \begin{SaveVerbatim}{epicnames}
 
@@ -430,8 +442,10 @@ data Name = UN String     -- user name
 \end{SaveVerbatim}
 \useverb{epicnames}
 
-It can be more convenient to give explicit names for $\lambda$
-bindings, so we declare an instance to allow that:
+\noindent
+If we have explicit names for arguments, it can be more convenient to
+pass these to Epic directly rather than to use the name supply. We
+provide an instance to allow a user to give argument names explicitly:
 
 \begin{SaveVerbatim}{exprnamed}
 
@@ -443,25 +457,32 @@ instance EpicExpr e => EpicExpr ([Name], e) where
 \end{SaveVerbatim}
 \useverb{exprnamed}
 
-Both forms can be mixed freely.
-A program is a collection of named Epic declarations:
+\noindent
+Both forms, using Haskell functions or explicit names, can be mixed
+freely in an expression. A program is a collection of named Epic
+expressions built using the \texttt{EpicExpr} class:
 
 \begin{SaveVerbatim}{eprogs}
 
-data EpicDecl = forall e. EpicExpr e => EpicFn Name e
-              | ...
-
 type Program = [EpicDecl]
+
+data EpicDecl = forall e. EpicExpr e => EpicFn Name e
+              | Include String 
+              | Link    String    
+              | CType   String   
 
 \end{SaveVerbatim}
 \useverb{eprogs}
 
 \noindent
-Epic declarations are usually just a function (\texttt{EpicFn}) but
-can also be used to include C header files, declare libraries for
-linking and declare types for exporting as C types. The library also
-provides a number of built in definitions for some common operations
-such as outputting strings and converting data types:
+Declarations are usually just a function (\texttt{EpicFn}) but can
+also be used to include C header files (\texttt{Include}), declare
+libraries for linking (\texttt{Link}) and declare types for exporting
+as C types (\texttt{CType}). These additional declarations are useful
+when interfacing with external code.
+
+The library provides a number of built-in definitions for some common
+operations such as outputting strings and converting data types:
 
 \begin{SaveVerbatim}{bdefs}
 
@@ -470,6 +491,10 @@ basic_defs :: [EpicDecl]
 \end{SaveVerbatim}
 \useverb{bdefs}
 
+\noindent
+In this paper we use $\VV{putStr}$ and $\VV{putStrLn}$ for outputting
+strings, $\VV{append}$ for concatenating strings, and
+$\VV{intToString}$ for integer to string conversion.
 We can compile a collection of definitions to an executable, or simply
 execute them directly. Execution begins with the function called
 \texttt{"main"} --- Epic reports an error if this function is not
@@ -485,24 +510,68 @@ run     :: Program -> IO ()
 
 \subsubsection*{Building expressions}
 
-We've seen $\lambda$ bindings, using either Haskell's $\lambda$ or
-pairing the names with their scope.
+We have seen how to build $\lambda$ bindings with the
+\texttt{EpicExpre} class, using either Haskell's $\lambda$ or pairing
+explicitly bound names with their scope. We now add further
+sub-expressions. Firstly, we introduce functions for referring to
+explicitly bound names --- \texttt{ref} build a reference to a
+\texttt{Name}, \texttt{name} converts a string into the internal form,
+and \texttt{fn} combines these operations.
 
-General form is that we build a \texttt{Term} (i.e. an expression
-managing the name supply) by combining arbitrary Epic expressions
-(i.e. instances of \texttt{EpicExpr}).
+\begin{SaveVerbatim}{nameapi}
+
+ref  :: Name -> Term
+name :: String -> Name
+
+fn   :: String -> Term
+
+\end{SaveVerbatim}
+\useverb{nameapi}
+
+\noindent
+We would refer to the $\VV{putStrLn}$ function, for example, with
+\texttt{fn~"putStrLn"}.
+Constants are constructed using the following functions:
+
+\begin{SaveVerbatim}{constapi}
+
+str   :: String -> Term
+int   :: Int    -> Term
+char  :: Char   -> Term
+float :: Float  -> Term
+bool  :: Bool   -> Term
+
+\end{SaveVerbatim}
+\useverb{constapi}
+
+The general form of functions which build expressions is to create a
+\texttt{Term} --- i.e. an expression which manages its own name supply
+--- by combining arbitrary Epic expressions (i.e. instances of
+\texttt{EpicExpr}). For example, to apply a function to an argument,
+we provide an \texttt{EpicExpr} for the function and the argument,
+yielding a \texttt{Term}:
 
 \begin{SaveVerbatim}{appapi}
 
+infixl 5 @@
 (@@) :: (EpicExpr f, EpicExpr a) => f -> a -> Term
 
 \end{SaveVerbatim}
 \useverb{appapi}
 
-Distinction between Haskell application and Epic
-application (\texttt{@@}).
+Since \texttt{Term} itself is an instance of \texttt{EpicExpr}, we can
+apply a function to several arguments through nested applications of
+\texttt{@@}, which associates to the left as with normal Haskell
+function application. It is easy to build partially applied functions
+this way. 
 
-Operators. Separate versions for floating point and integer.
+%Distinction between Haskell application and Epic
+%application (\texttt{@@}).
+
+We have several arithmetic operators, including arithmetic, comparison
+and bitwise operators. Since there are different representations for
+integers and floating point values, and Epic does no type inference,
+there are separate versions for integers and floating point values.
 
 \begin{SaveVerbatim}{opsapi}
 
@@ -510,16 +579,18 @@ plus_, minus_, times_, divide_,    :: Op
 plusF_, minusF_, timesF_, divideF_ :: Op
 lt_, lte_, gt_, gte_,              :: Op
 ltF_, lteF_, gtF_, gteF_,          :: Op
-shiftl_, shiftr_                  :: Op
+shiftl_, shiftr_                   :: Op
 
 \end{SaveVerbatim}
 \useverb{opsapi}
 
-Convention: Epic keywords are represented by a Haskell function which
-is the keyword with an underscore suffix. Arises because we can't have
-``let'', ``if'', ``case'' etc as function names, and extended to other
-primitives such as operators, foreign calls (anything that'd be a
-keyword in general).
+A convention we follow in the API is that Epic keywords and primitive
+operators are represented by a Haskell function with an underscore
+suffix. This convention arises because we cannot use Haskell keywords
+such as \texttt{if}, \texttt{let} and \texttt{case} as function names.
+For consistency, we have extended the convention to all functions and
+operators. \texttt{if...then...else} expressions are built using the
+\texttt{if\_} function:
 
 \begin{SaveVerbatim}{ifexp}
 
@@ -530,20 +601,23 @@ if_ :: (EpicExpr a, EpicExpr t, EpicExpr e) =>
 \useverb{ifexp}
 
 For $\RW{let}$ bindings, we can either use higher order syntax or bind
-an explicit name:
+an explicit name. To achieve this, as before, we implement a type
+class and instances which support both:
 
 \begin{SaveVerbatim}{letapi}
 
-let_  :: (EpicExpr e) => 
-         e -> (Expr -> Term) -> Term
-letN_ :: (EpicExpr val, EpicExpr scope) =>
-         Name -> val -> scope -> Term
+class LetExpr e where
+    let_ :: EpicExpr val => val -> e -> State Int Expr
+
+instance EpicExpr sc => LetExpr (Name, sc)
+instance                LetExpr (Expr -> Term)
 
 \end{SaveVerbatim}
 \useverb{letapi}
 
-Shorthand if we're just using lets to sequence then throw away the
-bound thing:
+Occasionally, especially in imperative code, we use $\RW{let}$
+bindings for sequencing actions. We provide a shorthand for this
+common case:
 
 \begin{SaveVerbatim}{seqapi}
 
@@ -553,19 +627,11 @@ bound thing:
 \end{SaveVerbatim}
 \useverb{seqapi}
 
-Name management:
-
-\begin{SaveVerbatim}{nameapi}
-
-ref  :: Name -> Term
-name :: String -> Name
-fn   :: String -> Term
-
-\end{SaveVerbatim}
-\useverb{nameapi}
-
-Building constructor forms. \texttt{tuple\_} is provided as a
-shorthand if the tag is not important.
+To build a constructor form, we apply a constructor with an integer
+\remph{tag} to its arguments. We build a constructor using the
+\texttt{con\_} function, and provide a shorthand \texttt{tuple\_} for
+the common case where the tag can be ignored --- as the name suggests,
+this happens when building tuples and records:
 
 \begin{SaveVerbatim}{conapi}
 
@@ -575,20 +641,41 @@ tuple_ :: Term
 \end{SaveVerbatim}
 \useverb{conapi}
 
+To call a foreign function, we provide the external name as a
+\texttt{String}. Unlike normal function application, partial
+application is not allowed --- all arguments must be provided.  The
+caller must also provide the expected return type, and state the type
+of each argument so that values can be marshalled to and from C
+correctly:
+
+\begin{SaveVerbatim}{foreignapi}
+
+foreign_, :: EpicExpr e => 
+             Type -> String -> [(e, Type)] -> Term
+
+\end{SaveVerbatim}
+\useverb{foreignapi}
+
 \subsubsection*{Case analysis}
 
-Case expressions:
+To inspect constructor forms, to deconstruct tuples, we build
+$\RW{case}$ expressions. A case expression chooses one of the
+alternative executions path depending on the value of the scrutinee,
+which can be any Epic expression:
 
 \begin{SaveVerbatim}{caseapi}
 
-case_ :: (EpicExpr e) => e -> [Case] -> Term
+case_ :: EpicExpr e => e -> [Case] -> Term
 
 \end{SaveVerbatim}
 \useverb{caseapi}
 
-Building case alternatives for constructors. We use the same trick as
-we did for $\lambda$-bindings, either allowing Haskell to manage to
-scope of constructor arguments, or giving names explicitly, or a mixture.
+\noindent
+The scrutinee is matched against each branch, in order. To match
+against a constructor form, we use the same trick as we did for
+$\lambda$-bindings, either allowing Haskell to manage to scope of
+constructor arguments, or giving names explicitly to arguments, or a
+mixture:
 
 \begin{SaveVerbatim}{conalt}
 
@@ -606,15 +693,16 @@ instance Alternative e => Alternative ([Name], e)
 
 We can build case alternatives for constructor forms, tuples, or
 integer constants, as well as a default case if all other alternatives
-fail to match. In each of the following, \texttt{e} is the right hand
-side. For constructors and tuples, arguments may be bound in the
-match. (We have to use \texttt{Alternative} rather than
+fail to match. In each of the following, \texttt{e} is an expression
+which gives the argument bindings, if any, and the right hand side of
+the match.
+
+(We have to use \texttt{Alternative} rather than
 \texttt{EpicExpr} to ensure that we get arguments bound in the match,
 rather than a $\lambda$ binding on the right hand side).
 
 \begin{SaveVerbatim}{altsapi}
 
-con         :: Alternative e => Int -> e -> Case
 tuple       :: Alternative e =>        e -> Case
 constcase   :: EpicExpr e    => Int -> e -> Case
 defaultcase :: EpicExpr e    =>        e -> Case

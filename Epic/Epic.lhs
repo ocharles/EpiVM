@@ -302,14 +302,24 @@ Remaining expression constructs
 >                     sc' <- term sc
 >                     return $ Let n TyAny val' sc'
 
+> -- | Build expressions, with a name supply
+> class LetExpr e where
+>     let_ :: EpicExpr val => val -> e -> State Int Expr
+
+> instance LetExpr (Expr -> Term) where
+>     let_ = letV_
+
+> instance EpicExpr sc => LetExpr (Name, sc) where
+>     let_ val (n, sc) = letN_ n val sc
+
 > -- | Let bindings with higher order syntax
-> let_ :: (EpicExpr e) =>
+> letV_ :: (EpicExpr e) =>
 >         e -> (Expr -> Term) -> Term
-> let_ e f = do e' <- term e
->               f' <- f (R (MN "DUMMY" 0))
->               let var = MN "loc" (topVar f')
->               fv <- f (R var)
->               return $ Let var TyAny e' fv
+> letV_ e f = do e' <- term e
+>                f' <- f (R (MN "DUMMY" 0))
+>                let var = MN "loc" (topVar f')
+>                fv <- f (R var)
+>                return $ Let var TyAny e' fv
 
 > -- | Update a local variable (could be an explicit name or bound with
 > -- a lambda, so we let it be an 'Expr'.
@@ -370,7 +380,7 @@ Remaining expression constructs
 
 > -- | Sequence terms --- evaluate the first then second
 > (+>) :: (EpicExpr c) => c -> Term -> Term
-> (+>) c k = let_ c (\x -> k)
+> (+>) c k = let_ c (\(x :: Expr) -> k)
 
 > tyInt, tyChar, tyBool, tyFloat, tyString, tyPtr, tyUnit, tyAny :: Type
 > tyC :: String -> Type

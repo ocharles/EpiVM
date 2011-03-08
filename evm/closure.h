@@ -274,7 +274,7 @@ extern VMState* vm;
 void* NEWBIGINT(char* bigint);
 void* MKBIGINT(mpz_t* bigint);
 
-void* MKSTR(char* str);
+void* MKSTR(const char* str);
 void* MKPTR(void* ptr);
 void* MKFLOAT(double x);
 

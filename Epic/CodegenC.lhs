@@ -306,6 +306,7 @@
 > doOp t Minus l r = tmp t ++ " = INTOP(-,"++tmp l ++ ", "++tmp r++");"
 > doOp t Times l r = tmp t ++ " = MULT("++tmp l ++ ", "++tmp r++");"
 > doOp t Divide l r = tmp t ++ " = INTOP(/,"++tmp l ++ ", "++tmp r++");"
+> doOp t Modulo l r = tmp t ++ " = INTOP(%,"++tmp l ++ ", "++tmp r++");"
 > doOp t FPlus l r = tmp t ++ " = FLOATOP(+,"++tmp l ++ ", "++tmp r++");"
 > doOp t FMinus l r = tmp t ++ " = FLOATOP(-,"++tmp l ++ ", "++tmp r++");"
 > doOp t FTimes l r = tmp t ++ " = FLOATOP(*,"++tmp l ++ ", "++tmp r++");"
