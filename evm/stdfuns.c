@@ -242,11 +242,22 @@ mpz_t* mulBigInt(mpz_t x, mpz_t y) {
 
 VAL mulBig(VAL x, VAL y) {
     if (ISINT(x) && ISINT(y)) {
-	int vx = GETINT(x);
-	int vy = GETINT(y);
-	mpz_t *resb = mulBigInt(*(NEWBIGINTI(vx)), *(NEWBIGINTI(vy)));
-	VAL res = MKBIGINT(resb);
-	return res;
+	int vx = abs(GETINT(x));
+	int vy = abs(GETINT(y));
+	// we could work out likelihood of overflow by checking the number
+	// of necessary bits. Here's a quick conservative hack instead.
+	if ((vx < (1<<15) && vy < (1<16)) ||
+	    (vx < (1<<16) && vy < (1<15)) ||
+	    (vx < (1<<20) && vy < (1<11)) ||
+	    (vx < (1<<11) && vy < (1<20)) ||
+	    (vx < (1<<23) && vy < (1<<8)) ||
+	    (vx < (1<<8) && vy < (1<<23))) { // ultra-conservative!
+	    return INTOP(*,x,y);
+	} else {
+	    mpz_t *resb = mulBigInt(*(NEWBIGINTI(vx)), *(NEWBIGINTI(vy)));
+	    VAL res = MKBIGINT(resb);
+	    return res;
+	}
     } else {
 	return MKBIGINT(mulBigInt(*(GETBIGINT(x)), *(GETBIGINT(y))));
     }
