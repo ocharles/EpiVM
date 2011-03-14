@@ -34,35 +34,35 @@ index (x:String, i:Int) -> Char =
 -- Big number arithmetic
 
 addBig (x:BigInt, y:BigInt) -> BigInt =
-   foreign BigInt "addBigInt" (x:BigInt, y:BigInt)
+   foreign BigInt "addBig" (x:BigInt, y:BigInt)
 
 subBig (x:BigInt, y:BigInt) -> BigInt =
-   foreign BigInt "subBigInt" (x:BigInt, y:BigInt)
+   foreign BigInt "subBig" (x:BigInt, y:BigInt)
 
 mulBig (x:BigInt, y:BigInt) -> BigInt =
-   foreign BigInt "mulBigInt" (x:BigInt, y:BigInt)
+   foreign BigInt "mulBig" (x:BigInt, y:BigInt)
 
 eqBig (x:BigInt, y:BigInt) -> Bool =
-   foreign Int "eqBigInt" (x:BigInt, y:BigInt)
+   foreign Int "eqBig" (x:BigInt, y:BigInt)
 
 ltBig (x:BigInt, y:BigInt) -> Bool =
-   foreign Int "ltBigInt" (x:BigInt, y:BigInt)
+   foreign Int "ltBig" (x:BigInt, y:BigInt)
 
 gtBig (x:BigInt, y:BigInt) -> Bool =
-   foreign Int "gtBigInt" (x:BigInt, y:BigInt)
+   foreign Int "gtBig" (x:BigInt, y:BigInt)
 
 leBig (x:BigInt, y:BigInt) -> Bool =
-   foreign Int "leBigInt" (x:BigInt, y:BigInt)
+   foreign Int "leBig" (x:BigInt, y:BigInt)
 
 geBig (x:BigInt, y:BigInt) -> Bool =
-   foreign Int "geBigInt" (x:BigInt, y:BigInt)
+   foreign Int "geBig" (x:BigInt, y:BigInt)
 
 printBig (x:BigInt) -> Unit =
-   foreign Unit "printBigInt" (x:BigInt)
+   foreign Unit "printBig" (x:BigInt)
 
 bigIntToStr (x:BigInt) -> String =
-    foreign String "bigIntToStr" (x:BigInt)
+    foreign String "bigToStr" (x:BigInt)
 
 strToBigInt (x:String) -> Int =
-    foreign String "strToBigInt" (x:String)
+    foreign String "strToBig" (x:String)
 

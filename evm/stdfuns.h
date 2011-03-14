@@ -18,6 +18,7 @@
 void putStr(char* str);
 void printInt(int x);
 void printBigInt(mpz_t x);
+void printBig(VAL x);
 
 // dump memory usage (from libgc)
 void epicMemInfo();
@@ -65,6 +66,9 @@ int floatToInt(double x);
 mpz_t* strToBigInt(char* str);
 char* bigIntToStr(mpz_t x);
 
+VAL strToBig(char* str);
+char* bigToStr(VAL x);
+
 // get a native representation of a value
 void* getNative(void * fn);
 
@@ -93,6 +97,20 @@ int ltBigInt(mpz_t x, mpz_t y);
 int gtBigInt(mpz_t x, mpz_t y);
 int leBigInt(mpz_t x, mpz_t y);
 int geBigInt(mpz_t x, mpz_t y);
+
+// VAL versions, which can also cope with INT and promote to BIGINT if necessary
+
+VAL addBig(VAL x, VAL y);
+VAL subBig(VAL x, VAL y);
+VAL mulBig(VAL x, VAL y);
+VAL divBig(VAL x, VAL y);
+VAL modBig(VAL x, VAL y);
+
+int eqBig(VAL x, VAL y);
+int ltBig(VAL x, VAL y);
+int gtBig(VAL x, VAL y);
+int leBig(VAL x, VAL y);
+int geBig(VAL x, VAL y);
 
 #endif
 

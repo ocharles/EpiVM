@@ -850,7 +850,7 @@ void* DO_PROJECT(VAL x, int arg)
 }
 */
 
- /*void* MKINT(int x)
+/*void* MKINT(int x)
 {
     return (void*)((x<<1)+1);
 //    VAL c = MKCLOSURE;
@@ -858,6 +858,28 @@ void* DO_PROJECT(VAL x, int arg)
 //    c->info = (void*)x;
 //    return c;
 }*/
+
+mpz_t* NEWBIGINTI(int val)
+{
+    mpz_t* bigint = EMALLOC(sizeof(mpz_t));
+    mpz_init(*bigint);
+    mpz_set_si(*bigint, val);
+    return bigint;
+}
+
+void* NEWBIGINTVALI(int val)
+{
+    mpz_t* bigint;
+    VAL c = EMALLOC(sizeof(Closure)+sizeof(mpz_t));
+    bigint = (mpz_t*)(c+1);
+    mpz_init(*bigint);
+    mpz_set_si(*bigint, val);
+
+    SETTY(c, BIGINT);
+    c->info = (void*)bigint;
+    EREADY(c);
+    return c;
+}
 
 void* NEWBIGINT(char* intstr)
 {
@@ -911,7 +933,11 @@ int GETINT(void* x)
 
 mpz_t* GETBIGINT(void* x)
 {
-    return (mpz_t*)(((VAL)x)->info);
+    if (ISINT(x)) {
+	return NEWBIGINTI(GETINT(x));
+    } else {
+	return (mpz_t*)(((VAL)x)->info);
+    }
 }
 
 double GETFLOAT(void* x)

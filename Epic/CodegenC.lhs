@@ -270,7 +270,7 @@
 > cToEpic var TyString = "MKSTR((char*)(" ++ var ++ "))"
 > cToEpic var TyInt = "MKINT(INTTOEINT(" ++ var ++ "))"
 > cToEpic var TyPtr = "MKPTR(" ++ var ++ ")"
-> cToEpic var TyBigInt = "MKBIGINT((mpz_t*)(" ++ var ++ "))"
+> -- cToEpic var TyBigInt = "MKBIGINT((mpz_t*)(" ++ var ++ "))" -- now just a VAL
 > cToEpic var TyFloat = "MKFLOAT(" ++ var ++ ")"
 > cToEpic var TyUnit = "NULL"
 > cToEpic var _ = "(void*)(" ++ var ++")"
@@ -287,7 +287,7 @@
  castFrom t _ rest = tmp t ++ " = (void*)(" ++ rest ++ ")"
 
 > epicToC t TyInt = "EINTTOINT(GETINT("++ t ++"))"
-> epicToC t TyBigInt = "*(GETBIGINT("++ t ++"))"
+> -- epicToC t TyBigInt = "*(GETBIGINT("++ t ++"))" -- now just a VAL
 > epicToC t TyString = "GETSTR("++ t ++")"
 > epicToC t TyFloat = "GETFLOAT(" ++ t ++ ")"
 > epicToC t TyPtr = "GETPTR("++ t ++")"

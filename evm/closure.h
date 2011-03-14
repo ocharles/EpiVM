@@ -271,6 +271,8 @@ extern VMState* vm;
 #define EINTTOINT(x) ((int)(x))
 
 //void* MKINT(int x);
+mpz_t* NEWBIGINTI(int val);
+void* NEWBIGINTVALI(int val);
 void* NEWBIGINT(char* bigint);
 void* MKBIGINT(mpz_t* bigint);
 

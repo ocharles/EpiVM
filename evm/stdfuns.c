@@ -9,6 +9,14 @@
 void printInt(int x) { printf("%d\n",x); }
 void putStr(char* s) { printf("%s",s); }
 void printBigInt(mpz_t x) { printf("%s\n",mpz_get_str(NULL,10,x)); }
+void printBig(VAL x) 
+{ 
+    if (ISINT(x)) {
+	printf("%ld INT\n", GETINT(x));
+    } else {
+	printBigInt(*(GETBIGINT(x)));
+    }
+}
 
 void epicGC() {
 #ifdef USE_BOEHM
@@ -184,10 +192,46 @@ mpz_t* addBigInt(mpz_t x, mpz_t y) {
     return answer;
 }
 
+VAL addBig(VAL x, VAL y) {
+    if (ISINT(x) && ISINT(y)) {
+	int vx = GETINT(x);
+	int vy = GETINT(y);
+	if ((vx <= 0 && vy >=0) || (vx >=0 && vy <=0)) {
+	    return INTOP(+,x,y);
+	}
+	int res = vx + vy;
+	if (res >= 1<<30 || res <= -(1 << 30)) {
+	    return MKBIGINT(addBigInt(*(NEWBIGINTI(vx)), *(NEWBIGINTI(vy))));
+	} else {
+	    return MKINT(res);
+	}
+    } else {
+	return MKBIGINT(addBigInt(*(GETBIGINT(x)), *(GETBIGINT(y))));
+    }
+}
+
 mpz_t* subBigInt(mpz_t x, mpz_t y) {
     mpz_t* answer = EMALLOC(sizeof(mpz_t));
     mpz_sub(*answer, x, y);
     return answer;
+}
+
+VAL subBig(VAL x, VAL y) {
+    if (ISINT(x) && ISINT(y)) {
+	int vx = GETINT(x);
+	int vy = GETINT(y);
+	if ((vx <= 0 && vy <=0) || (vx >=0 && vy >=0)) {
+	    return INTOP(-,x,y);
+	}
+	int res = vx - vy;
+	if (res >= 1<<30 || res <= -(1 << 30)) {
+	    return MKBIGINT(subBigInt(*(NEWBIGINTI(vx)), *(NEWBIGINTI(vy))));
+	} else {
+	    return MKINT(res);
+	}
+    } else {
+	return MKBIGINT(subBigInt(*(GETBIGINT(x)), *(GETBIGINT(y))));
+    }
 }
 
 mpz_t* mulBigInt(mpz_t x, mpz_t y) {
@@ -196,10 +240,31 @@ mpz_t* mulBigInt(mpz_t x, mpz_t y) {
     return answer;
 }
 
+VAL mulBig(VAL x, VAL y) {
+    if (ISINT(x) && ISINT(y)) {
+	int vx = GETINT(x);
+	int vy = GETINT(y);
+	mpz_t *resb = mulBigInt(*(NEWBIGINTI(vx)), *(NEWBIGINTI(vy)));
+	VAL res = MKBIGINT(resb);
+	return res;
+    } else {
+	return MKBIGINT(mulBigInt(*(GETBIGINT(x)), *(GETBIGINT(y))));
+    }
+}
+
 mpz_t* divBigInt(mpz_t x, mpz_t y) {
     mpz_t* answer = EMALLOC(sizeof(mpz_t));
     mpz_tdiv_q(*answer, x, y);
     return answer;
+}
+
+VAL divBig(VAL x, VAL y) {
+    if (ISINT(x) && ISINT(y)) {
+	// always gets smaller, so it's safe
+	return INTOP(/, x, y);
+    } else {
+	return MKBIGINT(divBigInt(*(GETBIGINT(x)), *(GETBIGINT(y))));
+    }
 }
 
 mpz_t* modBigInt(mpz_t x, mpz_t y) {
@@ -208,8 +273,25 @@ mpz_t* modBigInt(mpz_t x, mpz_t y) {
     return answer;
 }
 
+VAL modBig(VAL x, VAL y) {
+    if (ISINT(x) && ISINT(y)) {
+	// always gets smaller, so it's safe
+	return INTOP(%, x, y);
+    } else {
+	return MKBIGINT(modBigInt(*(GETBIGINT(x)), *(GETBIGINT(y))));
+    }
+}
+
 int eqBigInt(mpz_t x, mpz_t y) {
     return mpz_cmp(x,y)==0;
+}
+
+int eqBig(VAL x, VAL y) {
+    if (ISINT(x) && ISINT(y)) {
+	return (GETINT(x) == GETINT(y));
+    } else {
+	return (eqBigInt(*(GETBIGINT(x)), *(GETBIGINT(y))));
+    }
 }
 
 int ltBigInt(mpz_t x, mpz_t y)
@@ -217,9 +299,25 @@ int ltBigInt(mpz_t x, mpz_t y)
     return mpz_cmp(x,y)<0;
 }
 
+int ltBig(VAL x, VAL y) {
+    if (ISINT(x) && ISINT(y)) {
+	return (GETINT(x) < GETINT(y));
+    } else {
+	return (ltBigInt(*(GETBIGINT(x)), *(GETBIGINT(y))));
+    }
+}
+
 int gtBigInt(mpz_t x, mpz_t y)
 {
     return mpz_cmp(x,y)>0;
+}
+
+int gtBig(VAL x, VAL y) {
+    if (ISINT(x) && ISINT(y)) {
+	return (GETINT(x) > GETINT(y));
+    } else {
+	return (gtBigInt(*(GETBIGINT(x)), *(GETBIGINT(y))));
+    }
 }
 
 int leBigInt(mpz_t x, mpz_t y)
@@ -227,9 +325,25 @@ int leBigInt(mpz_t x, mpz_t y)
     return mpz_cmp(x,y)<=0;
 }
 
+int leBig(VAL x, VAL y) {
+    if (ISINT(x) && ISINT(y)) {
+	return (GETINT(x) <= GETINT(y));
+    } else {
+	return (leBigInt(*(GETBIGINT(x)), *(GETBIGINT(y))));
+    }
+}
+
 int geBigInt(mpz_t x, mpz_t y)
 {
     return mpz_cmp(x,y)>=0;
+}
+
+int geBig(VAL x, VAL y) {
+    if (ISINT(x) && ISINT(y)) {
+	return (GETINT(x) >= GETINT(y));
+    } else {
+	return (geBigInt(*(GETBIGINT(x)), *(GETBIGINT(y))));
+    }
 }
 
 mpz_t* strToBigInt(char* str)
@@ -248,6 +362,19 @@ char* bigIntToStr(mpz_t x)
     free(str);
     return buf;
 }
+
+VAL strToBig(char* str) {
+    return MKBIGINT(strToBigInt(str));
+}
+
+char* bigToStr(VAL x) {
+    if (ISINT(x)) {
+	return intToStr(GETINT(x));
+    } else {
+	return bigIntToStr(*(GETBIGINT(x)));
+    }
+}
+
 
 // IORefs
 int numrefs = 0;
