@@ -534,7 +534,7 @@ inline VAL CLOSURE_ADD5(VAL xin, VAL a1, VAL a2, VAL a3, VAL a4, VAL a5)
     fn->arg_end[2] = a3;
     fn->arg_end[3] = a4;
     fn->arg_end[4] = a5;
-    fn->arg_end+=2;
+    fn->arg_end+=5;
 
     return x;
 }
@@ -684,7 +684,9 @@ inline VAL CLOSURE_APPLY1(VAL f, VAL a1)
 	    block[got] = a1;
 	    return (VAL)(finf->fn(block));
 	}
-	else return CLOSURE_ADD1(f,a1);
+	else if (finf->arity < (got+1)) {
+	    return (VAL) DO_EVAL(CLOSURE_ADD1(f,a1), 0);
+	}	else return CLOSURE_ADD1(f,a1);
     }
     else return aux_CLOSURE_APPLY1(f,a1);
 }
@@ -705,8 +707,9 @@ inline VAL CLOSURE_APPLY2(VAL f, VAL a1, VAL a2)
 	    block[got] = a1;
 	    block[got+1] = a2;
 	    return (VAL)(finf->fn(block));
-	}
-	else return CLOSURE_ADD2(f,a1,a2);
+	} else if (finf->arity < (got+2)) {
+	    return (VAL) DO_EVAL(CLOSURE_ADD2(f,a1,a2), 0);
+	}	else return CLOSURE_ADD2(f,a1,a2);
     }
     else return aux_CLOSURE_APPLY2(f,a1,a2);
 }
@@ -724,7 +727,9 @@ inline VAL CLOSURE_APPLY3(VAL f, VAL a1, VAL a2, VAL a3)
 	    block[got+2] = a3;
 	    return (VAL)(finf->fn(block));
 	}
-	else return CLOSURE_ADD3(f,a1,a2,a3);
+	else if (finf->arity < (got+3)) {
+	    return (VAL) DO_EVAL(CLOSURE_ADD3(f,a1,a2,a3), 0);
+	}	else return CLOSURE_ADD3(f,a1,a2,a3);
     }
     else return aux_CLOSURE_APPLY3(f,a1,a2,a3);
 }
@@ -743,7 +748,9 @@ inline VAL CLOSURE_APPLY4(VAL f, VAL a1, VAL a2, VAL a3, VAL a4)
 	    block[got+3] = a4;
 	    return (VAL)(finf->fn(block));
 	}
-	else return CLOSURE_ADD4(f,a1,a2,a3,a4);
+	else if (finf->arity < (got+4)) {
+	    return (VAL) DO_EVAL(CLOSURE_ADD4(f,a1,a2,a3,a4), 0);
+	}	else return CLOSURE_ADD4(f,a1,a2,a3,a4);
     }
     else return aux_CLOSURE_APPLY4(f,a1,a2,a3,a4);
 }
@@ -763,7 +770,9 @@ inline VAL CLOSURE_APPLY5(VAL f, VAL a1, VAL a2, VAL a3, VAL a4, VAL a5)
 	    block[got+4] = a5;
 	    return (VAL)(finf->fn(block));
 	}
-	else return CLOSURE_ADD5(f,a1,a2,a3,a4,a5);
+	else if (finf->arity < (got+5)) {
+	    return (VAL) DO_EVAL(CLOSURE_ADD5(f,a1,a2,a3,a4,a5), 0);
+	}	else return CLOSURE_ADD5(f,a1,a2,a3,a4,a5);
     }
     else return aux_CLOSURE_APPLY5(f,a1,a2,a3,a4,a5);
 }
@@ -783,6 +792,7 @@ VAL DO_EVAL(VAL x, int update) {
     switch(GETTY(x)) {
     case CON:
     case INT:
+    case BIGINT:
     case FLOAT:
     case STRING:
     case PTR:
