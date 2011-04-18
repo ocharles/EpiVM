@@ -114,6 +114,8 @@ typedef Closure* VAL;
 #define GETTY(x) (ISINT(x) ? INT : ((ClosureType)(((x)->ty) >> 24)))
 #define QGETTY(x) ((ClosureType)(((x)->ty) >> 24))
 #define SETTY(x,t) (x)->ty = (((eint)t) << 24)
+#define SETTY_STK(x,t) (x)->ty = (1 + (((eint)t) << 24))
+#define ON_STK(x) (((x)->ty & 1) == 1)
 
 #define REF(x) x
 #define DEREF(x) 
@@ -174,6 +176,8 @@ void* pool_grow_malloc(size_t size);
 void* pool_grow_realloc(void* ptr, size_t size);
 // Copy value from the given pool into the currently active region
 VAL copy(VAL x, pool_t* pool);
+// Promote a value on the stack to the heap
+VAL promote(VAL x);
 
 void freePool(pool_t* pool);
 
