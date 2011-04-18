@@ -20,8 +20,8 @@
 
 > writeIFace :: [Decl] -> String
 > writeIFace [] = ""
-> writeIFace ((Decl name ret (Bind args _ _ _) _ _):xs) =
->     "extern " ++ showC name ++ " ("++ showextargs (args) ++ ")" ++
+> writeIFace ((Decl (UN name) ret (Bind args _ _ _) _ _):xs) =
+>     "extern " ++ name ++ " ("++ showextargs (args) ++ ")" ++
 >               " -> " ++ show ret ++ "\n" ++ writeIFace xs
 > writeIFace (_:xs) = writeIFace xs
 
