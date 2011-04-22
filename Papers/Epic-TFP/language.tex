@@ -1,0 +1,474 @@
+\section{The Epic Language}
+
+Epic is based on the $\lambda$-calculus with some extensions.
+It supports primitives such as strings and integers, as well as tagged
+unions. There are additional control structures for specifying
+evaluation order, primitive loop constructs, and calling foreign
+functions. Foreign function calls are annotated with types, to assist
+with marshaling values between Epic and C, but otherwise there are no
+type annotations and there is no type checking --- as Epic is intended
+as an intermediate language, it is assumed that the high level
+language has already performed any necessary type checking. The
+abstract syntax of the core language is given in Figure \ref{epicsyn}.
+As a shorthand, we use de Bruijn telescope notation, $\tx$, to denote
+a sequence of $\vx$.
+We use $\vx$ to stand for variable names, and $\vi$, $\vb$, $\vf$,
+$\vc$, and $\VV{str}$ to stand for integer, boolean, floating
+point, character and string literals respectively.
+
+\newcommand{\Con}[2]{\DC{Con}\:#1(#2)}
+
+\FFIG{
+\AR{
+\begin{array}{rcllcll}\\
+\vp & ::= & \vec{\VV{def}} & \mbox{(Epic program)} &
+\VV{def} ::= & \vx(\tx) = \vt &
+\mbox{(Definition)} \\
+\\
+\vt & ::= & \vx & \mbox{(Variable)}
+& \mid &  \vt(\ttt) & \mbox{(Application)} \\
+& \mid & \lambda\vx\SC\vt & \mbox{(Lambda binding)}
+& \mid & \RW{let}\:\vx\:=\:\vt\:\RW{in}\:\vt & \mbox{(Let
+  binding)} \\
+& \mid & \Con{\vi}{\ttt} & \mbox{(Constructor)}
+& \mid & \vt ! \vi & \mbox{(Projection)} \\
+& \mid & \vt\:\VV{op}\:\vt & \mbox{(Infix operator)}
+& \mid & \RW{if}\:\vt\:\RW{then}\:\vt\:\RW{else}\:\vt & \mbox{(Conditional)}\\
+& \mid & \RW{case}\:\vt\:\RW{of}\:\vec{\VV{alt}} & \mbox{(Case expressions)}
+& \mid & \RW{lazy}(\vt) & \mbox{(Lazy evaluation)} \\
+& \mid & \RW{effect}(\vt) & \mbox{(Effectful term)}
+& \mid & \RW{while}\:\vt\:\vt & \mbox{(While loops)} \\
+& \mid & \vx := \:\vt\:\RW{in}\:\vt & \mbox{(Variable update)}
+& \mid & \RW{foreign}\:\vT\:\VV{str}\:\vec{(\vt\Hab\vT)} & \mbox{(Foreign
+call)} \\
+& \mid & \RW{malloc}\:\vt\:\vt & \mbox{(Allocation)}
+& \mid & \vi \mid \vf \mid \vc \mid \vb \mid \VV{str} & \mbox{(Constants)} \\
+\\
+\VV{alt} & ::= &
+\Con{\vi}{\tx} \cq \vt & \mbox{(Constructors)}
+& \mid & \vi \cq \vt & \mbox{(Constants)} \\
+& \mid & \RW{default} \cq \vt & \mbox{(Match anything)} \\
+\end{array}
+\medskip
+\\
+\begin{array}{rcll}
+\VV{op} & ::= & + \mid - \mid \times \mid / \mid\:
+==\: \mid \:<\: \mid \:\le\: \mid \:>\: \mid \:\ge \: \mid \: << \:
+\mid \: >>\\
+\end{array}
+\medskip
+\\
+\begin{array}{rcll}
+\vT & ::= & \TC{Int} \mid \TC{Char} \mid \TC{Bool} \mid \TC{Float}
+\mid \TC{String} & \mbox{(Primitives)} \\
+ & \mid & \TC{Unit} & \mbox{(Unit type)} \\
+ & \mid & \TC{Ptr} & \mbox{(Foreign pointers)} \\
+% & \mid & \TC{Fun} & \mbox{(Any function type)} \\
+% & \mid & \TC{Data} & \mbox{(Any data type)} \\
+ & \mid & \TC{Any} & \mbox{(Polymorphic type)} \\
+\end{array}
+}
+}
+{Epic syntax}
+{epicsyn}
+
+\subsection{Definitions}
+
+An Epic program consists of a sequence of \remph{untyped} function
+definitions, with zero or more arguments. The entry point is the
+function $\VV{main}$, which takes no arguments. For example:
+
+\DM{
+\begin{array}{ll}
+\VV{factorial}(\vx)&\:=\:
+\RW{if}\:\vx==0\:\AR{\RW{then}\:1\\
+\RW{else}\:\vx\:\times\:\VV{factorial}(\vx-1)}
+\medskip
+\\
+\VV{main}()&\:=\:\VV{putStrLn}(\VV{intToString}(\VV{factorial}(10)))
+\end{array}
+} 
+
+\noindent
+The right hand side of a definition is an expression consisting of
+function applications, operators (arithmetic, comparison, and
+bit-shifting), bindings and control structures (some low level and
+imperative).  Functions may be partially applied.
+
+\subsubsection*{Values}
+
+Values in an Epic program are either one of the primitives (an
+integer, floating point number, character, boolean or string) or a
+\remph{tagged union}. Tagged unions are of the form $\DC{Con}
+\vi(\vt_1,\ldots,\vt_n)$, where $\vi$ is the \remph{tag} and the $\ttt$
+are the \remph{fields}. The name $\DC{Con}$ is to suggest
+``Constructor''. For example, we could represent a list using tagged
+unions, with $\DC{Con}\:0()$ representing the empty list and
+$\DC{Con}\:1(\vx,\:\vxs)$ representing a cons cell, where $\vx$
+is the element and $\vxs$ is the tail of the list.
+
+Tagged unions are inspected either using field projection ($\vt!\vi$
+projects the $\vi$th field from a tagged union $\vt$) or by case
+analysis. e.g., to append two lists:
+
+\DM{
+\AR{
+\VV{append}(\vxs,\vys)\:=
+\RW{case}\:\vxs\:\RW{of}\\
+\hg\hg\begin{array}{ll}
+\DC{Con}\:0()&\cq\:\vys\\
+\DC{Con}\:1(\vx,\vxs')&\cq\:\DC{Con}\:1(\vx,\VV{append}(\vxs',\vys))
+\end{array}
+}
+}
+
+\subsubsection*{Evaluation Strategy}
+
+By default, expressions are evaluated eagerly (in applicative order),
+i.e. arguments to functions and tagged unions are evaluated
+immediately, left to right. Evaluation can instead be delayed using
+the $\RW{lazy}$ construct. An expression $\RW{lazy}(\vt)$ will not be
+evaluated until it is required by one of:
+
+\begin{itemize}
+\item Inspection in a $\RW{case}$ expression or the condition in an
+  $\RW{if}$ statement.
+\item Field projection.
+\item Being passed to a foreign function.
+\item Explicit evaluation with $\RW{effect}$. This evaluates
+  side-effecting code (and does not update the thunk).
+\end{itemize}
+
+
+\subsubsection*{Higher order functions}
+
+Finally, expressions may contain $\lambda$ and $\RW{let}$
+bindings. Higher order functions such as $\VV{map}$ are also permitted:
+
+\DM{
+\AR{
+\VV{map}(\vf,\vxs)\:=\:
+\RW{case}\:\vxs\:\RW{of}\\
+\hg\hg\begin{array}{ll}
+\DC{Con}\:0() & \cq\:\DC{Con}\:0()\\
+\DC{Con}\:1(\vx,\vxs') & \cq\:\DC{Con}\:1(\vf(\vx), \VV{map}(\vf,\vxs'))
+\end{array}
+\medskip
+\\
+\VV{evens}(\vn)\:=\:\RW{let}\:\AR{\VV{nums}\:=\:
+\VV{take}(\vn, \VV{countFrom}(1))\:\RW{in}\\
+\VV{map}(\lambda\vx\SC\vx\:\times \:2, \VV{nums})
+}
+}
+}
+
+\subsection{Foreign Functions}
+
+Most programs eventually need to interact with the operating
+system. Epic provides a lightweight foreign function interface which
+allows interaction with external C code.
+Since Epic does no type checking or inference,
+a foreign call requires the argument and return types to be given
+explicitly. e.g. the C function:
+
+\begin{SaveVerbatim}{csin}
+
+double sin(double x);
+
+\end{SaveVerbatim}
+\useverb{csin}
+
+\noindent
+We can call this function from Epic by giving the C name, the return
+type (an Epic $\TC{Float}$) and the argument type (also an Epic
+$\TC{Float}$).
+
+\DM{
+\VV{sin}(\vx)\:=\:\RW{foreign}\:\TC{Float}\:\mathtt{"sin"}\:(\vx\Hab\TC{Float})
+}
+
+\subsection{Low Level Features}
+
+Epic emphasises control over safety, and therefore provides some low
+level features to give language implementations more control over
+generated code.  A high level language may wish to use these features
+in some performance critical contexts, whether for sequencing side
+effects, implementing optimisations, or to provide run-time support
+code. 
+Epic allows sequencing, $\RW{while}$ loops and variable update, and
+provides a $\RW{malloc}$ construct for memory allocation. The
+behaviour of $\RW{malloc}\:\vn\:\vt$ is to create a fixed pool of
+$\vn$ bytes, and allocate only from this pool when evaluating
+$\vt$. 
+
+\subsection{Haskell API}
+
+The primary interface to Epic is through a Haskell API, which is used
+to build expressions and programs, and to compile them to executables.
+Implementing a compiler for a high level language is then a matter of
+converting the abstract syntax of a high level program into an Epic
+program, through these ``compiler combinators'', and implementing any
+run-time support as Epic functions.
+
+\subsubsection*{Programs and expressions}
+
+The API allows the building of Epic programs with an Embedded Domain
+Specific Language (EDSL) style interface, i.e. we try to exploit
+Haskell's syntax as far as possible. There are several
+possible representations of Epic expressions.
+\texttt{Expr} is the internal abstract representation, and
+\texttt{Term} is a representation which carries a name supply. We have
+a type class \texttt{EpicExpr} which provides a function \texttt{term}
+for building a concrete expression using a name supply:
+
+\begin{SaveVerbatim}{exprclass}
+
+type Term = State Int Expr
+
+class EpicExpr e where
+    term :: e -> Term
+
+\end{SaveVerbatim}
+\useverb{exprclass}
+
+There are straightforward instances of \texttt{EpicExpr} for the
+internal representation \texttt{Expr} and \texttt{Term}. There is also
+an instance for \texttt{String}, which parses concrete syntax, which
+is beyond the scope of this paper. More interestingly, we can build an
+instance of the type class which allows Haskell functions to be used
+to build Epic functions.  This means we can use Haskell names for Epic
+references, and not need to worry about scoping or ambiguous name
+choices. 
+
+\begin{SaveVerbatim}{exprinstance}
+
+instance EpicExpr e => EpicExpr (Expr -> e) where
+
+\end{SaveVerbatim}
+\useverb{exprinstance}
+
+\noindent
+If we have explicit names for arguments, it can be more convenient to
+pass these to Epic directly rather than to use the name supply. We
+provide an instance to allow a user to give argument names explicitly:
+
+\begin{SaveVerbatim}{exprnamed}
+
+instance EpicExpr e => EpicExpr ([Name], e) where
+
+\end{SaveVerbatim}
+\useverb{exprnamed}
+
+\noindent
+Both forms, using Haskell functions or explicit names, can be mixed
+freely in an expression. A program is a collection of named Epic
+expressions built using the \texttt{EpicExpr} class:
+
+\begin{SaveVerbatim}{eprogs}
+
+type Program = [EpicDecl]
+
+data EpicDecl = forall e. EpicExpr e => EpicFn Name e
+
+\end{SaveVerbatim}
+\useverb{eprogs}
+
+\noindent
+The library provides a number of built-in definitions for some common
+operations such as outputting strings and converting data types:
+
+\begin{SaveVerbatim}{bdefs}
+
+basic_defs :: [EpicDecl]
+
+\end{SaveVerbatim}
+\useverb{bdefs}
+
+\noindent
+In this paper we use $\VV{putStr}$ and $\VV{putStrLn}$ for outputting
+strings, $\VV{append}$ for concatenating strings, and
+$\VV{intToString}$ for integer to string conversion.
+We can compile a collection of definitions to an executable, or simply
+execute them directly. Execution begins with the function called
+\texttt{"main"} --- Epic reports an error if this function is not
+defined:
+
+\begin{SaveVerbatim}{compepic}
+
+compile :: Program -> FilePath -> IO ()
+run     :: Program -> IO ()
+
+\end{SaveVerbatim}
+\useverb{compepic}
+
+\subsubsection*{Building expressions}
+
+We have seen how to build $\lambda$ bindings with the
+\texttt{EpicExpr} class, using either Haskell's $\lambda$ or pairing
+explicitly bound names with their scope. We now add further
+sub-expressions. Firstly, we introduce functions for referring to
+explicitly bound names --- \texttt{ref} build a reference to a
+\texttt{Name}, \texttt{name} converts a string into the internal form,
+and \texttt{fn} combines these operations.
+
+\begin{SaveVerbatim}{nameapi}
+
+ref  :: Name -> Term
+name :: String -> Name
+fn   :: String -> Term
+
+\end{SaveVerbatim}
+\useverb{nameapi}
+
+\noindent
+We would refer to the $\VV{putStrLn}$ function, for example, with
+\texttt{fn~"putStrLn"}. 
+The general form of functions which build expressions is to create a
+\texttt{Term} --- i.e. an expression which manages its own name supply
+--- by combining arbitrary Epic expressions (i.e. instances of
+\texttt{EpicExpr}). For example, to apply a function to an argument,
+we provide an \texttt{EpicExpr} for the function and the argument:
+
+\begin{SaveVerbatim}{appapi}
+
+infixl 5 @@
+(@@) :: (EpicExpr f, EpicExpr a) => f -> a -> Term
+
+\end{SaveVerbatim}
+\useverb{appapi}
+
+\noindent
+Since \texttt{Term} itself is an instance of \texttt{EpicExpr}, we can
+apply a function to several arguments through nested applications of
+\texttt{@@}, which associates to the left as with normal Haskell
+function application. We have several arithmetic operators, including
+arithmetic, comparison and bitwise operators, e.g.:
+
+\begin{SaveVerbatim}{opsapi}
+
+plus_, minus_, times_, divide_,    :: Op
+
+\end{SaveVerbatim}
+\useverb{opsapi}
+
+\noindent
+We follow the convention that Epic keywords and primitive
+operators are represented by a Haskell function with an underscore
+suffix. This convention arises because we cannot use Haskell keywords
+such as \texttt{if}, \texttt{let} and \texttt{case} as function names.
+For consistency, we have extended the convention to all functions and
+operators. \texttt{if...then...else} expressions are built using the
+\texttt{if\_} function:
+
+\begin{SaveVerbatim}{ifexp}
+
+if_ :: (EpicExpr a, EpicExpr t, EpicExpr e) => a -> t -> e -> Term
+
+\end{SaveVerbatim}
+\useverb{ifexp}
+
+\noindent
+For $\RW{let}$ bindings, we can either use higher order syntax or bind
+an explicit name. To achieve this, as before, we implement a type
+class and instances which support both:
+
+\begin{SaveVerbatim}{letapi}
+
+class LetExpr e where
+    let_ :: EpicExpr val => val -> e -> State Int Expr
+
+instance EpicExpr sc => LetExpr (Name, sc)
+instance                LetExpr (Expr -> Term)
+
+\end{SaveVerbatim}
+\useverb{letapi}
+
+%% \noindent
+%% Occasionally, especially in imperative code, we use $\RW{let}$
+%% bindings for sequencing actions. We provide a shorthand for this
+%% common case:
+
+%% \begin{SaveVerbatim}{seqapi}
+
+%% (+>) :: (EpicExpr c) => c -> Term -> Term
+%% (+>) c k = let_ c (\x -> k)
+
+%% \end{SaveVerbatim}
+%% \useverb{seqapi}
+
+\noindent
+To build a constructor form, we apply a constructor with an integer
+\remph{tag} to its arguments. We build a constructor using the
+\texttt{con\_} function, and provide a shorthand \texttt{tuple\_} for
+the common case where the tag can be ignored --- as the name suggests,
+this happens when building tuples and records:
+
+\begin{SaveVerbatim}{conapi}
+
+con_   :: Int -> Term
+tuple_ :: Term
+
+\end{SaveVerbatim}
+\useverb{conapi}
+
+\subsubsection*{Case analysis}
+
+\noindent
+To inspect constructor forms, or to deconstruct tuples, we use
+$\RW{case}$ expressions. A case expression chooses one of the
+alternative executions path depending on the value of the scrutinee,
+which can be any Epic expression:
+
+\begin{SaveVerbatim}{caseapi}
+
+case_ :: EpicExpr e => e -> [Case] -> Term
+
+\end{SaveVerbatim}
+\useverb{caseapi}
+
+\noindent
+The scrutinee is matched against each branch, in order. To match
+against a constructor form, we use the same trick as we did for
+$\lambda$-bindings, either allowing Haskell to manage to scope of
+constructor arguments, or giving names explicitly to arguments, or a
+mixture:
+
+\begin{SaveVerbatim}{conalt}
+
+class Alternative e where
+    mkAlt :: Tag -> e -> Case
+
+\end{SaveVerbatim}
+\begin{SaveVerbatim}{conalt2}
+
+instance Alternative Expr
+instance Alternative Term
+
+instance Alternative e => Alternative (Expr -> e)
+instance Alternative e => Alternative ([Name], e)
+
+\end{SaveVerbatim}
+\useverb{conalt}
+
+\useverb{conalt2}
+
+\noindent
+We can build case alternatives for constructor forms, tuples, or
+integer constants, as well as a default case if all other alternatives
+fail to match. In each of the following, \texttt{e} is an expression
+which gives the argument bindings, if any, and the right hand side of
+the match.
+
+%(We have to use \texttt{Alternative} rather than
+%\texttt{EpicExpr} to ensure that we get arguments bound in the match,
+%rather than a $\lambda$ binding on the right hand side).
+
+\begin{SaveVerbatim}{altsapi}
+
+tuple       :: Alternative e =>        e -> Case
+constcase   :: EpicExpr e    => Int -> e -> Case
+defaultcase :: EpicExpr e    =>        e -> Case
+
+\end{SaveVerbatim}
+\useverb{altsapi}
+

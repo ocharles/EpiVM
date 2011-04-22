@@ -1,0 +1,107 @@
+%\documentclass{llncs}
+\documentclass[orivec,dvips,10pt]{llncs}
+
+\usepackage[draft]{comments}
+%\usepackage[final]{comments}
+% \newcommand{\comment}[2]{[#1: #2]}
+\newcommand{\khcomment}[1]{\comment{KH}{#1}}
+\newcommand{\ebcomment}[1]{\comment{EB}{#1}}
+
+\usepackage{epsfig}
+\usepackage{path}
+\usepackage{url}
+\usepackage{amsmath,amssymb} 
+\usepackage{fancyvrb}
+
+\newenvironment{template}{\sffamily}
+
+\usepackage{graphics,epsfig}
+\usepackage{stmaryrd}
+
+\input{./macros.ltx}
+\input{./library.ltx}
+
+\NatPackage
+\FinPackage
+
+\newcounter{per}
+\setcounter{per}{1}
+
+\newcommand{\Ivor}{\textsc{Ivor}}
+\newcommand{\Idris}{\textsc{Idris}}
+\newcommand{\Funl}{\textsc{Funl}}
+\newcommand{\Agda}{\textsc{Agda}}
+\newcommand{\LamPi}{$\lambda_\Pi$}
+
+\newcommand{\perule}[1]{\vspace*{0.1cm}\noindent
+\begin{center}
+\fbox{
+\begin{minipage}{7.5cm}\textbf{Rule \theper:} #1\addtocounter{per}{1}
+\end{minipage}}
+\end{center}
+\vspace*{0.1cm}
+}
+
+\newcommand{\mysubsubsection}[1]{
+\noindent
+\textbf{#1}
+}
+\newcommand{\hdecl}[1]{\texttt{#1}}
+
+\begin{document}
+
+\title{Epic --- A Library for Generating Compilers\\(Research Paper)}
+\author{Edwin Brady}
+
+\institute{University of St Andrews, KY16 9SX, Scotland/UK,\\
+\email{eb@cs.st-andrews.ac.uk}}
+
+\maketitle
+
+\begin{abstract}
+Compilers for functional languages, whether strict or non-strict,
+typed or untyped, need to handle many of the same problems, for
+example thunks, lambda lifting, optimisation, garbage collection, and
+system interaction.  Although implementation techniques are by now
+well understood, it remains difficult for a new functional language to
+exploit these techniques without either implementing a compiler from
+scratch, or attempting fit the new language around another existing
+compiler.
+Epic is a compiled functional language which exposes functional
+compilation techniques to a language implementor, with a Haskell
+API. In this extended abstract we describe Epic and outline how it may
+be used to implement a high level language compiler.
+
+\end{abstract}
+
+\input{intro}
+
+\input{language}
+
+\input{example}
+
+%\input{implementation}
+
+%\input{performance}
+
+\input{conclusions}
+
+%\vspace{-0.2in}
+%% \section*{Acknowledgments}
+
+%% This work was partly funded by the Scottish Informatics and Computer
+%% Science Alliance (SICSA) and by EU Framework 7 Project No. 248828
+%% (ADVANCE). I thanks James McKinna, Kevin Hammond and Anil
+%% Madhavapeddy for several helpful discussions, and the anonymous
+%% reviewers for their constructive suggestions.
+
+\bibliographystyle{abbrv}
+\begin{small}
+\bibliography{literature.bib}
+
+\appendix
+
+%\input{code}
+
+\end{small}
+\end{document}
