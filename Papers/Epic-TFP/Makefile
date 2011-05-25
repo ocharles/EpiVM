@@ -3,7 +3,7 @@ PAPER = epic
 all: ${PAPER}.pdf
 
 TEXFILES = ${PAPER}.tex intro.tex language.tex example.tex \
-           implementation.tex performance.tex conclusions.tex
+           implementation.tex performance.tex conclusions.tex bigexample.tex
 
 DIAGS = 
 

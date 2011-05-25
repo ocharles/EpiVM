@@ -99,7 +99,7 @@ imperative).  Functions may be partially applied.
 
 Values in an Epic program are either one of the primitives (an
 integer, floating point number, character, boolean or string) or a
-\remph{tagged union}. Tagged unions are of the form $\DC{Con}
+\remph{tagged union}. Tagged unions are of the form $\DC{Con}\:
 \vi(\vt_1,\ldots,\vt_n)$, where $\vi$ is the \remph{tag} and the $\ttt$
 are the \remph{fields}. The name $\DC{Con}$ is to suggest
 ``Constructor''. For example, we could represent a list using tagged
@@ -135,6 +135,7 @@ evaluated until it is required by one of:
   $\RW{if}$ statement.
 \item Field projection.
 \item Being passed to a foreign function.
+% FIXME: you haven't explained thunks yet...
 \item Explicit evaluation with $\RW{effect}$. This evaluates
   side-effecting code (and does not update the thunk).
 \end{itemize}
@@ -232,7 +233,7 @@ class EpicExpr e where
 \useverb{exprclass}
 
 There are straightforward instances of \texttt{EpicExpr} for the
-internal representation \texttt{Expr} and \texttt{Term}. There is also
+internal representations \texttt{Expr} and \texttt{Term}. There is also
 an instance for \texttt{String}, which parses concrete syntax, which
 is beyond the scope of this paper. More interestingly, we can build an
 instance of the type class which allows Haskell functions to be used
@@ -313,7 +314,7 @@ and \texttt{fn} combines these operations.
 
 \begin{SaveVerbatim}{nameapi}
 
-ref  :: Name -> Term
+ref  :: Name   -> Term
 name :: String -> Name
 fn   :: String -> Term
 
@@ -427,6 +428,9 @@ case_ :: EpicExpr e => e -> [Case] -> Term
 \useverb{caseapi}
 
 \noindent
+We leave the definition of \texttt{Case} abstract (although it is
+simply an Epic expression carrying a name supply) and provide an
+interface for building case branches.
 The scrutinee is matched against each branch, in order. To match
 against a constructor form, we use the same trick as we did for
 $\lambda$-bindings, either allowing Haskell to manage to scope of
@@ -453,11 +457,12 @@ instance Alternative e => Alternative ([Name], e)
 \useverb{conalt2}
 
 \noindent
-We can build case alternatives for constructor forms, tuples, or
-integer constants, as well as a default case if all other alternatives
-fail to match. In each of the following, \texttt{e} is an expression
-which gives the argument bindings, if any, and the right hand side of
-the match.
+We can build case alternatives for constructor forms (matching a
+specific tag), tuples, or integer constants (matching a specific
+constant), as well as a default case if all other alternatives fail to
+match. In each of the following, \texttt{e} is an expression which
+gives the argument bindings, if any, and the right hand side of the
+match.
 
 %(We have to use \texttt{Alternative} rather than
 %\texttt{EpicExpr} to ensure that we get arguments bound in the match,
@@ -465,6 +470,7 @@ the match.
 
 \begin{SaveVerbatim}{altsapi}
 
+con         :: Alternative e => Int -> e -> Case
 tuple       :: Alternative e =>        e -> Case
 constcase   :: EpicExpr e    => Int -> e -> Case
 defaultcase :: EpicExpr e    =>        e -> Case

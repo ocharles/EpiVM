@@ -41,6 +41,8 @@ import Epic.Lexer
       funtype         { TokenFunType }
       datatype        { TokenDataType }
       tyctype         { TokenTyCType }
+      tylinear        { TokenTyLinear }
+      tyeval          { TokenTyEval }
       anytype         { TokenAnyType }
       unit            { TokenUnit }
       con             { TokenCon }
@@ -147,6 +149,8 @@ Type : inttype { TyInt }
      | anytype { TyAny }
      | datatype { TyData }
      | tyctype string { TyCType $2 }
+     | tylinear '(' Type ')' { TyLin $3 }
+     | tyeval '(' Type ')' { TyEval $3 }
      | funtype { TyFun }
 
 Declaration :: { Decl }

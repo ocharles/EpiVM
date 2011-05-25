@@ -64,6 +64,8 @@
 >       | TokenAnyType
 >       | TokenDataType
 >       | TokenTyCType
+>       | TokenTyLinear
+>       | TokenTyEval
 >       | TokenFunType
 >       | TokenForeign
 >       | TokenCInclude
@@ -248,6 +250,8 @@
 >       ("Unit",rest) -> cont TokenUnitType rest
 >       ("Data",rest) -> cont TokenDataType rest
 >       ("CType",rest) -> cont TokenTyCType rest
+>       ("Linear",rest) -> cont TokenTyLinear rest
+>       ("Eval",rest) -> cont TokenTyEval rest
 >       ("Fun",rest) -> cont TokenFunType rest
 >       ("Any",rest) -> cont TokenAnyType rest
 > -- values

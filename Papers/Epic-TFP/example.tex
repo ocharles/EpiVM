@@ -1,4 +1,6 @@
-\section{An Example High Level Language}
+\section{Example --- Compiling the $\lambda$-Calculus}
+
+\label{sec:lc}
 
 In this section we present a compiler for a simple high level
 language.
@@ -124,7 +126,7 @@ build (Op op l r)      = op_ (eOp op) (build l) (build r)
 \end{SaveVerbatim}
 \codefig{lcompile}{Compiling Untyped $\lambda$-calculus}
 
-\noindent
+%\noindent
 The cases worth noting are the compilation of $\lambda$-bindings and
 string concatenation. Using HOAS has the advantage that Haskell can
 manage scoping, but the disadvantage that it is not straightforward to
@@ -198,7 +200,6 @@ more complex language follows the same pattern: convert the abstract
 syntax for each named definition into a named Epic \texttt{Term}, add
 any required primitives (we have just used \texttt{basic\_defs} here),
 and pass the collection of definitions to \texttt{run} or
-\texttt{compile}. In the full paper, we will give a more detailed
-example.
+\texttt{compile}. 
 
 
