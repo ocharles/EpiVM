@@ -34,6 +34,8 @@ Raw data types. Int, Char, Bool are unboxed.
 >           | TyData -- generic data type
 >           | TyCType String -- Exported, C typedef
 >           | TyFun -- any function
+>           | TyLin Type -- guarantee at most one instance
+>           | TyEval Type -- guarantee evaluated
 >   deriving Eq
 
 > instance Show Type where
@@ -50,6 +52,8 @@ Raw data types. Int, Char, Bool are unboxed.
 >     show TyData = "Data"
 >     show (TyCType s) = "CType " ++ s
 >     show TyFun = "Fun"
+>     show (TyLin s) = "Linear(" ++ show s ++ ")"
+>     show (TyEval s) = "Eval(" ++ show s ++ ")"
 
 > data Const = MkInt Int
 >            | MkBigInt Integer

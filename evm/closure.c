@@ -282,6 +282,114 @@ VAL copy(VAL x, pool_t* oldpool) {
     }
 }
 
+/// "Promoting" is copying a value on the stack to the heap.
+/// Just like copying, except we leave it alone if it's already on the heap.
+/// (whether it's on the heap is a flag in the ty field)
+
+VAL promoteFun(fun* f) {
+    VAL c = EMALLOC(sizeof(Closure)+sizeof(fun));
+    fun* fn = (fun*)(c+1);
+    fn->fn = f->fn;
+    fn->arity = f->arity;
+    int args = f->arg_end - f->args;
+    fn->args = MKARGS(args);
+    fn->arg_end = fn->args + args;
+    void** p = fn->args;
+    void** a;
+
+    for(a = f->args; a < f->arg_end; ++a, ++p) {
+	*p = promote((VAL)(*a));
+    }
+    
+    SETTY(c, FUN);
+    c->info = (void*)fn;
+    EREADY(c);
+    return c;
+}
+
+VAL promoteThunk(thunk* t) {
+    VAL c = EMALLOC(sizeof(Closure)+sizeof(fun));
+    thunk* fn = (thunk*)(c+1);
+    
+    fn->fn = t->fn;
+    fn->args = MKARGS(t->numargs);
+    fn->numargs = t->numargs;
+
+    void** a = t->args;
+    void** p = fn->args;
+    int i;
+
+    for(i=0; i < t->numargs; ++i, ++a, ++p) {
+	*p = promote((VAL)(*a));
+    }
+
+    SETTY(c,THUNK);
+    c->info = (void*)fn;
+    EREADY(c);
+    return c;
+}
+
+VAL promoteCon(con* c) {
+    int arity = c->tag >> 16;
+//    printf("COPY CON %d %d\n", c->tag & 65535, arity);
+
+    VAL nc = EMALLOC(sizeof(Closure)+sizeof(con));
+    con* cn = (con*)(nc+1);
+
+    cn->tag = c->tag;
+    cn->args = MKARGS(arity);
+    
+    void** a = c->args;
+    void** p = cn->args;
+    int i;
+
+    for(i=0; i<arity; ++i, ++a, ++p) {
+//	printf("COPY ARG %d\n", *a);
+	*p = promote((VAL)(*a));
+    }
+
+    SETTY(nc, CON);
+    nc->info = (void*)cn;
+    EREADY(nc);
+    return nc;
+}
+
+// TODO: Make sure we preserve sharing!
+
+VAL promote(VAL x) {
+
+    if (x && !ISINT(x) && ON_STK(x)) {
+	switch(GETTY(x)) {
+	case FUN:
+	    return promoteFun((fun*)x->info);
+	case THUNK:
+	    return promoteThunk((thunk*)x->info);
+	case CON:
+	    return promoteCon((con*)x->info);
+	case INT:
+	    return x;
+	case BIGINT:
+	    return MKBIGINT((mpz_t*)(x->info));
+	case FLOAT:
+	    return MKFLOAT(*((double*)x->info));
+	case BIGFLOAT:
+	    assert(0); // NOT IMPLEMENTED YET
+	case STRING:
+	    return MKSTR((char*)x->info);
+	case UNIT:
+	    return MKUNIT;
+	case PTR:
+	    return MKPTR(x->info);
+	case FREEVAR:
+	    assert(0); // NOT IMPLEMENTED
+	}
+	return x;
+    }
+    else {
+	return x;
+    }
+}
+
 inline VAL CLOSURE(func x, int arity, int args, void** block)
 {
     VAL c = EMALLOC(sizeof(Closure)+sizeof(fun)); // MKCLOSURE;
