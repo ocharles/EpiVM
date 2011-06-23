@@ -15,4 +15,8 @@
 
 > testdefs = [(name "add", add), (name "main", main_)]
 
-> main = execute testdefs
+> main = do let prog = mkProgram testdefs
+>           let addNums = build (App (App (Ref (name "add")) (Const (CInt 5))) (Const (CInt 6)))
+>           let exp = evaluate prog addNums
+>           print exp
+>           run prog

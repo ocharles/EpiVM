@@ -1,3 +1,5 @@
+> {-# OPTIONS_GHC -fglasgow-exts -XFlexibleInstances #-}
+
 > module Epic.Language where
 
 > import Control.Monad
@@ -5,6 +7,8 @@
 > import System.IO
 > import System.Directory
 > import System.Environment
+
+> import Debug.Trace
 
 > -- | (Debugging) options to give to compiler
 > data CompileOptions = KeepC -- ^ Keep intermediate C file
@@ -98,6 +102,8 @@ Get the arity of a definition in the context
 
 > type Tag = Int
 
+> type HFun = Expr -> Expr
+
 > data Expr = V Int -- Locally bound name
 >           | R Name -- Global reference
 >           | App Expr [Expr] -- Function application
@@ -113,8 +119,10 @@ Get the arity of a definition in the context
 >           | Op Op Expr Expr -- Infix operator
 >           | Let Name Type Expr Expr -- Let binding
 >           | LetM Name Expr Expr -- Update a variable
+>           | HLet Name Type Expr HFun -- HOAS let, for evaluation
 >           | Update Int Expr Expr -- Update a variable (scope-checked)
 >           | Lam Name Type Expr -- inner lambda
+>           | HLam Name Type HFun -- HOAS lambda, for evaluation
 >           | Error String -- Exit with error message
 >           | Impossible -- Claimed impossible to reach code
 >           | WithMem Allocator Expr Expr -- evaluate with manual allocation
@@ -126,10 +134,23 @@ Get the arity of a definition in the context
 >                      alt_args :: [(Name, Type)], -- bound arguments
 >                      alt_expr :: Expr -- what to do
 >                    }
+>              | HAlt { alt_tag :: Tag,
+>                       alt_numargs :: Int,
+>                       alt_binds :: HRHS }
 >              | ConstAlt { alt_const :: Int,
 >                           alt_expr :: Expr }
 >              | DefaultCase { alt_expr :: Expr }
 >   deriving Eq
+
+> data HRHS = HExp Expr
+>           | HBind Name Type (Expr -> HRHS)
+>   deriving Eq
+
+> instance Eq (Expr -> Expr) where -- can't compare HOAS for equality
+>     _ == _ = False
+
+> instance Eq (Expr -> HRHS) where -- can't compare HOAS for equality
+>     _ == _ = False
 
 > instance Ord CaseAlt where -- only the tag matters
 >    compare (Alt t1 _ _) (Alt t2 _ _) = compare t1 t2
@@ -210,6 +231,96 @@ Programs
 >           | Link String
 >           | CType String
 >   deriving Show
+
+> data EvalDecl = EDecl { ename :: Name,
+>                         edef :: Expr -- as HOAS
+>                       }
+>               | EDirective
+
+> class SubstV x where
+>     subst :: Int -> Expr -> x -> x
+
+> instance SubstV a => SubstV [a] where
+>     subst v rep xs = map (subst v rep) xs
+
+> instance SubstV (Expr, Type) where
+>     subst v rep (x, t) = (subst v rep x, t)
+
+> instance SubstV Expr where
+>     subst v rep (V x) | v == x = rep
+>     subst v rep (App x xs) = App (subst v rep x) (subst v rep xs)
+>     subst v rep (Lazy x) = Lazy (subst v rep x)
+>     subst v rep (Effect x) = Effect (subst v rep x)
+>     subst v rep (Con t xs) = Con t (subst v rep xs)
+>     subst v rep (Proj x i) = Proj (subst v rep x) i
+>     subst v rep (Case x alts) = Case (subst v rep x) (subst v rep alts)
+>     subst v rep (If a t e) 
+>         = If (subst v rep a) (subst v rep t) (subst v rep e)
+>     subst v rep (While a e) = While (subst v rep a) (subst v rep e)
+>     subst v rep (WhileAcc a t e) 
+>         = WhileAcc (subst v rep a) (subst v rep t) (subst v rep e)
+>     subst v rep (Op o x y) = Op o (subst v rep x) (subst v rep y)
+>     subst v rep (Let n ty val sc) 
+>         = Let n ty (subst v rep val) (subst v rep sc)
+>     subst v rep (LetM n val sc)
+>         = LetM n (subst v rep val) (subst v rep sc)
+>     subst v rep (Lam n t e) = Lam n t (subst v rep e)
+>     subst v rep (WithMem a x y) = WithMem a (subst v rep x) (subst v rep y)
+>     subst v rep (ForeignCall t s xs) = ForeignCall t s (subst v rep xs)
+>     subst v rep (LazyForeignCall t s xs) 
+>         = LazyForeignCall t s (subst v rep xs)
+>     subst v rep x = x
+
+> instance SubstV CaseAlt where
+>     subst v rep (Alt t as e) = Alt t as (subst v rep e)
+>     subst v rep (ConstAlt i e) = ConstAlt i (subst v rep e)
+>     subst v rep (DefaultCase e) = DefaultCase (subst v rep e)
+
+> class HOAS a b | a -> b where
+>     hoas :: Int -> a -> b
+>     mkHOAS :: a -> b
+>     mkHOAS = hoas 0
+
+> instance HOAS a a => HOAS [a] [a] where
+>     hoas v xs = map (hoas v) xs
+
+> instance HOAS a a => HOAS (a, Type) (a, Type) where
+>     hoas v (x, t) = (hoas v x, t)
+
+> instance HOAS Func Expr where
+>     hoas v (Bind args locs def flags) = hargs v args def where
+>        hargs v [] def = hoas v def
+>        hargs v ((x,t):xs) def 
+>           = HLam x t (\var -> hargs (v+1) xs (subst v var def))
+
+> instance HOAS Expr Expr where
+>     hoas v (App f xs) = App (hoas v f) (hoas v xs)
+>     hoas v (Lazy x) = Lazy (hoas v x)
+>     hoas v (Effect x) = Effect (hoas v x)
+>     hoas v (Con t xs) = Con t (hoas v xs)
+>     hoas v (Proj x i) = Proj (hoas v x) i
+>     hoas v (Case x xs) = Case (hoas v x) (hoas v xs)
+>     hoas v (If x t e) = If (hoas v x) (hoas v t) (hoas v e)
+>     hoas v (While x y) = While (hoas v x) (hoas v y)
+>     hoas v (WhileAcc x y z) = WhileAcc (hoas v x) (hoas v y) (hoas v z)
+>     hoas v (Op o x y) = Op o (hoas v x) (hoas v y)
+>     hoas v (Let n t val sc) 
+>         = HLet n t val (\var -> subst v var (hoas (v+1) sc))
+>     hoas v (Lam n ty sc)
+>         = HLam n ty (\var -> subst v var (hoas (v+1) sc))
+>     hoas v (WithMem a x y) = WithMem a (hoas v x) (hoas v y)
+>     hoas v (ForeignCall t n xs) = ForeignCall t n (hoas v xs)
+>     hoas v (LazyForeignCall t n xs) = LazyForeignCall t n (hoas v xs)
+>     hoas v x = x
+
+> instance HOAS CaseAlt CaseAlt where
+>     hoas v (Alt t args rhs) = HAlt t (length args) (hbind v args rhs) where
+>        hbind v [] rhs = HExp (hoas v rhs)
+>        hbind v ((x,t):xs) rhs 
+>             = HBind x t (\var -> hbind (v+1) xs (subst v var rhs))
+>     hoas v (ConstAlt i e) = ConstAlt i (hoas v e)
+>     hoas v (DefaultCase e) = DefaultCase (hoas v e)
+
 
 > data CGFlag = Inline | Strict
 >   deriving (Show, Eq)

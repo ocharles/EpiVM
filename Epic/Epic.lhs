@@ -36,6 +36,7 @@
 >                  Epic.Epic.compile, compileObj, Epic.Epic.link, 
 >                  Epic.Epic.compileWith, compileObjWith, Epic.Epic.linkWith, 
 >                  run,
+>                  evaluate,
 >                  CompileOptions(..),
 >                  -- * Some basic definitions
 >                  basic_defs) where
@@ -45,9 +46,12 @@ Combinators for constructing an expression
 > import Control.Monad.State
 > import System
 > import System.IO
+> import Debug.Trace
 
 > import Epic.Language
 > import Epic.Compiler
+> import Epic.Evaluator
+> import Epic.Scopecheck
 > import Epic.Parser
 
 Allow Haskell functions to be used to build expressions.
@@ -444,6 +448,10 @@ Remaining expression constructs
 > mkDecl (Epic.Epic.Link f) = Epic.Language.Link f
 > mkDecl (Epic.Epic.CType f) = Epic.Language.CType f
 
+> mkEvalDecl :: Decl -> EvalDecl
+> mkEvalDecl (Decl n _ f _ _) = EDecl n (mkHOAS f)
+> mkEvalDecl _ = EDirective
+
 > -- |Compile a program to an executable
 > compile :: Program -> FilePath -> IO ()
 > compile = compileWith []
@@ -479,6 +487,11 @@ Remaining expression constructs
 >              Epic.Epic.compile tms tmpn
 >              system tmpn
 >              return ()
+
+> evaluate :: EpicExpr e => Program -> e -> Expr
+> evaluate tms e = case checkAll [] (map mkDecl tms) of
+>                    Just (_, tms') -> eval (map mkEvalDecl tms') 
+>                                           (evalState (term e) 0)
 
 Some useful functions
 

@@ -1,5 +1,5 @@
 Name:		epic
-Version:	0.1.12
+Version:	0.1.13
 Author:		Edwin Brady
 License:	BSD3
 License-file:	LICENSE
@@ -26,7 +26,8 @@ Library
         Exposed-modules: Epic.Compiler Epic.Epic
         Other-modules: Epic.Bytecode Epic.Parser Epic.Scopecheck
                        Epic.Language Epic.Lexer Epic.CodegenC Epic.CodegenStack
-                       Epic.OTTLang Epic.Simplify Epic.Stackcode Paths_epic
+                       Epic.OTTLang Epic.Simplify Epic.Stackcode 
+                       Epic.Evaluator Paths_epic
         Build-depends:	base >=4 && <5 , haskell98, mtl, Cabal, array, directory
 
 
@@ -34,6 +35,7 @@ Executable     epic
                Main-is: Main.lhs
                Other-modules: Epic.Bytecode Epic.Parser Epic.Scopecheck
                        Epic.Language Epic.Lexer Epic.CodegenC Epic.CodegenStack
-                       Epic.OTTLang Epic.Simplify Epic.Stackcode Paths_epic
+                       Epic.OTTLang Epic.Simplify Epic.Stackcode 
+                       Epic.Evaluator Paths_epic
                Build-depends: base >=4 && <5, mtl, array, haskell98, Cabal, directory
 
