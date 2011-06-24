@@ -491,7 +491,7 @@ Remaining expression constructs
 > evaluate :: EpicExpr e => Program -> e -> Expr
 > evaluate tms e = case checkAll [] (map mkDecl tms) of
 >                    Just (_, tms') -> eval (map mkEvalDecl tms') 
->                                           (evalState (term e) 0)
+>                                           (mkHOAS (doRtoV (evalState (term e) 0)))
 
 Some useful functions
 

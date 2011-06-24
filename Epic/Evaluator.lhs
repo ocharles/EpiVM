@@ -1,19 +1,23 @@
+> {-# OPTIONS_GHC -fglasgow-exts -XFlexibleInstances #-}
+
 > module Epic.Evaluator(eval) where
 
 > import Epic.Language
 
+> import Debug.Trace
+
 Assume all expressions are in HOAS form - if we see any Vs, or any Updates
-then we have an error.
+then we have an error. Returns expression in standard form.
 
 > eval :: [EvalDecl] -> Expr -> Expr
 > eval ctx e = case ev e of
->                Nothing -> e
->                Just e' -> e'
+>                Nothing -> quote 0 e
+>                Just e' -> quote 0 e'
 >   where
 >     ev (R n) = case lookupD n ctx of
 >                  Just e' -> ev e'
 >                  Nothing -> return $ R n
->     ev (V i) = fail "Not in HOAS form"
+>     ev (V i) = return $ V i
 >     ev (App f xs) = do f' <- ev f
 >                        xs' <- mapM ev xs
 >                        evFn f' xs'
@@ -40,6 +44,10 @@ then we have an error.
 >     ev (LetM _ _ _) = fail "Can't do updates"
 >     ev (HLet n ty val sc) = do val' <- ev val
 >                                ev (sc val')
+>     ev (HLam n ty sc) = do let sc' = \x -> case ev (sc x) of
+>                                              Nothing -> sc x
+>                                              Just v -> v
+>                            return $ HLam n ty sc'
 >     ev (WithMem a t e) = ev e
 >     ev (ForeignCall t str args) 
 >         = do args' <- mapM ev (map fst args)
@@ -49,7 +57,8 @@ then we have an error.
 >              return $ LazyForeignCall t str (zip args' (map snd args))
 >     ev x = return x
 
->     evFn (HLam n t sc) (a:as) = evFn (sc a) as
+>     evFn (HLam n t sc) (a:as) = do a' <- ev (sc a)
+>                                    evFn a' as
 >     evFn f [] = ev f
 >     evFn f as = return $ App f as
 
@@ -114,3 +123,36 @@ then we have an error.
 > lookupD n (EDecl en def:xs) | n == en = Just def
 > lookupD n (_:xs) = lookupD n xs
 
+> class Quote a where
+>     quote :: Int -> a -> a
+
+> instance Quote a => Quote [a] where
+>     quote l = map (quote l)
+
+> instance Quote a => Quote (a, Type) where
+>     quote l (x,t) = (quote l x, t)
+
+> instance Quote Expr where
+>     quote v (App x xs) = App (quote v x) (quote v xs)
+>     quote v (Lazy x) = Lazy (quote v x)
+>     quote v (Effect x) = Effect (quote v x)
+>     quote v (Con t xs) = Con t (quote v xs)
+>     quote v (Proj x i) = Proj (quote v x) i
+>     quote v (Case e as) = Case (quote v e) (quote v as)
+>     quote v (If x y z) = If (quote v x) (quote v y) (quote v z)
+>     quote v (While x y) = While (quote v x) (quote v y)
+>     quote v (WhileAcc x y z) = WhileAcc (quote v x) (quote v y) (quote v z)
+>     quote v (Op o x y) = Op o (quote v x) (quote v y)
+>     quote v (HLam n ty fn) = Lam n ty (quote (v+1) (fn (V v)))
+>     quote v (WithMem a x y) = WithMem a (quote v x) (quote v y)
+>     quote v (ForeignCall t s xs) = ForeignCall t s (quote v xs)
+>     quote v (LazyForeignCall t s xs) = LazyForeignCall t s (quote v xs)
+>     quote v x = x
+
+> instance Quote CaseAlt where
+>     quote v (HAlt t n rhs) = buildRHS v t [] rhs where
+>         buildRHS v t acc (HExp e) = Alt t (reverse acc) (quote v e)
+>         buildRHS v t acc (HBind n ty rhs)
+>              = buildRHS (v+1) t ((n,ty):acc) (rhs (V v))
+>     quote v (ConstAlt c e) = ConstAlt c (quote v e)
+>     quote v (DefaultCase e) = DefaultCase (quote v e)

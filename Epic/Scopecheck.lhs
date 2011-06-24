@@ -1,3 +1,5 @@
+> {-# OPTIONS_GHC -fglasgow-exts -XFlexibleInstances #-}
+
 > module Epic.Scopecheck where
 
 Check that an expression has all its names in scope. This is the only
@@ -156,12 +158,60 @@ If any names appear more than once, use the last one.
 
 We're being very tolerant of input here... 
 
->    v_ise [] _ = []
->    v_ise ((n,ty):args) i = let rest = v_ise args (i+1) in
->                                case lookup n rest of
->                                  Nothing -> (n,i):rest
->                                  _ -> rest
+> v_ise [] _ = []
+> v_ise ((n,ty):args) i = let rest = v_ise args (i+1) in
+>                             case lookup n rest of
+>                               Nothing -> (n,i):rest
+>                               _ -> rest
 
        where dropArg n [] = []
              dropArg n ((x,i):xs) | x == n = dropArg n xs
                                   | otherwise = (x,i):(dropArg n xs)
+
+This is scope checking without the lambda lifting. Of course, it would be
+better to separate the two anyway... FIXME later...
+
+> class RtoV a where
+>     rtov :: [(Name, Int)] -> a -> a
+>     doRtoV :: a -> a
+>     doRtoV = rtov []
+
+> instance RtoV a => RtoV [a] where
+>     rtov env xs = map (rtov env) xs
+
+> instance RtoV a => RtoV (a, Type) where
+>     rtov env (x, t) = (rtov env x, t)
+
+> instance RtoV Func where
+>     rtov env (Bind args locs def flags) 
+>          = Bind args locs (rtov (v_ise args 0) def) flags
+
+> instance RtoV Expr where
+>     rtov v (R x) = case lookup x v of
+>                      Just i -> V i
+>                      _ -> R x
+>     rtov v (App f xs) = App (rtov v f) (rtov v xs)
+>     rtov v (Lazy x) = Lazy (rtov v x)
+>     rtov v (Effect x) = Effect (rtov v x)
+>     rtov v (Con t xs) = Con t (rtov v xs)
+>     rtov v (Proj x i) = Proj (rtov v x) i
+>     rtov v (Case x xs) = Case (rtov v x) (rtov v xs)
+>     rtov v (If x t e) = If (rtov v x) (rtov v t) (rtov v e)
+>     rtov v (While x y) = While (rtov v x) (rtov v y)
+>     rtov v (WhileAcc x y z) = WhileAcc (rtov v x) (rtov v y) (rtov v z)
+>     rtov v (Op o x y) = Op o (rtov v x) (rtov v y)
+>     rtov v (Let n t val sc) 
+>         = Let n t (rtov v val) (rtov ((n,length v):v) sc)
+>     rtov v (Lam n ty sc)
+>         = Lam n ty (rtov ((n,length v):v) sc)
+>     rtov v (WithMem a x y) = WithMem a (rtov v x) (rtov v y)
+>     rtov v (ForeignCall t n xs) = ForeignCall t n (rtov v xs)
+>     rtov v (LazyForeignCall t n xs) = LazyForeignCall t n (rtov v xs)
+>     rtov v x = x
+
+> instance RtoV CaseAlt where
+>     rtov v (Alt t args rhs) 
+>        = let env' = (v_ise args (length v)) ++ v in
+>             Alt t args (rtov env' rhs)
+>     rtov v (ConstAlt i e) = ConstAlt i (rtov v e)
+>     rtov v (DefaultCase e) = DefaultCase (rtov v e)
