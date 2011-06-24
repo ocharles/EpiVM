@@ -124,10 +124,10 @@ Return the new state.
 >             (dir :: Expr) (col :: Expr) (pen :: Expr) -> 
 >              let_ (op_ plus_ x (floatToInt (op_ timesF_ (intToFloat (getInt dist))
 >                                                        (esin dir))))
->              (\x' -> let_ (op_ plus_ y (floatToInt 
+>              (\ (x' :: Expr) -> let_ (op_ plus_ y (floatToInt 
 >                                            (op_ timesF_ (intToFloat (getInt dist))
 >                                                        (ecos dir))))
->              (\y' -> if_ pen (fn "drawLine" @@ surf @@ x @@ y 
+>              (\ (y' :: Expr) -> if_ pen (fn "drawLine" @@ surf @@ x @@ y 
 >                                      @@ x' @@ y' @@ col)
 >                              unit_ +>
 >                      tuple_ @@ surf @@ x' @@ y' @@ dir @@ col @@ pen)))]
@@ -168,7 +168,7 @@ Repeat n times
 > primRepeat st n e = case_ (getInt n)
 >                 [constcase 0 st,
 >                  defaultcase (let_ (e @@ st)
->                      (\st' -> fn "repeat" @@ st'
+>                      (\ (st' :: Expr) -> fn "repeat" @@ st'
 >                                   @@ mkint (op_ minus_ (getInt n) (int 1))
 >                                   @@ e))]
 

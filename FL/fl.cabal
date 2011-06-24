@@ -19,4 +19,4 @@ Executable     fl
                hs-source-dirs: src
                Other-modules: Lang
                Build-depends: base >=4 && <5, haskell98, Cabal, directory, 
-                              epic >=0.1.10
+                              epic >=0.1.13

@@ -36,8 +36,8 @@
 >        buildOp Lt     = lt_
 >        buildOp Gt     = gt_
 
-> mkProgram :: Defs -> Program
-> mkProgram ds = basic_defs ++ map (\ (n, d) -> EpicFn n (build d)) ds
+> mkProg :: Defs -> Program
+> mkProg ds = mkProgram $ basic_defs ++ map (\ (n, d) -> EpicFn n (build d)) ds
 
 > execute :: Defs -> IO ()
-> execute p = run (mkProgram p)
+> execute p = run (mkProg p)

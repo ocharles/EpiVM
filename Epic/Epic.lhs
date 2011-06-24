@@ -31,7 +31,7 @@
 >                  eq_, lt_, lte_, gt_, gte_, 
 >                  eqF_, ltF_, lteF_, gtF_, gteF_, shiftl_, shiftr_,
 >                  -- * Declarations and programs
->                  EpicDecl(..), Program, 
+>                  EpicDecl(..), Program, mkProgram,
 >                  -- * Compiling and execution
 >                  Epic.Epic.compile, compileObj, Epic.Epic.link, 
 >                  Epic.Epic.compileWith, compileObjWith, Epic.Epic.linkWith, 
@@ -436,7 +436,11 @@ Remaining expression constructs
 > instance Show EpicDecl where
 >     show (EpicFn n e) = show (n, evalState (func e) 0)
 
-> type Program = [EpicDecl]
+> data Program = Program { epic_decls :: [EpicDecl],
+>                          eval_decls :: [EvalDecl] }
+
+> mkProgram :: [EpicDecl] -> Program
+> mkProgram tms = Program tms (map mkEvalDecl tms)
 
 > name :: String -> Name
 > name = UN
@@ -448,8 +452,8 @@ Remaining expression constructs
 > mkDecl (Epic.Epic.Link f) = Epic.Language.Link f
 > mkDecl (Epic.Epic.CType f) = Epic.Language.CType f
 
-> mkEvalDecl :: Decl -> EvalDecl
-> mkEvalDecl (Decl n _ f _ _) = EDecl n (mkHOAS f)
+> mkEvalDecl :: EpicDecl -> EvalDecl
+> mkEvalDecl (EpicFn n e) = EDecl n (mkHOAS (doRtoV (evalState (func e) 0)))
 > mkEvalDecl _ = EDirective
 
 > -- |Compile a program to an executable
@@ -459,8 +463,8 @@ Remaining expression constructs
 > -- |Compile a program to an executable, with options
 > compileWith :: [CompileOptions] -> Program -> FilePath -> IO ()
 > compileWith opts tms outf 
->                 = do compileDecls (outf++".o") Nothing (map mkDecl tms) opts
->                      Epic.Compiler.link [outf++".o"] outf opts
+>   = do compileDecls (outf++".o") Nothing (map mkDecl (epic_decls tms)) opts
+>        Epic.Compiler.link [outf++".o"] outf opts
 
 > -- |Compile a program to a .o
 > compileObj :: Program -> FilePath -> IO ()
@@ -469,7 +473,7 @@ Remaining expression constructs
 > -- |Compile a program to a .o, with options
 > compileObjWith :: [CompileOptions] -> Program -> FilePath -> IO ()
 > compileObjWith opts tms outf 
->                    = compileDecls outf Nothing (map mkDecl tms) opts
+>     = compileDecls outf Nothing (map mkDecl (epic_decls tms)) opts
 
 > -- |Link a collection of object files. By convention, the entry point is
 > -- the function called 'main'.
@@ -489,9 +493,8 @@ Remaining expression constructs
 >              return ()
 
 > evaluate :: EpicExpr e => Program -> e -> Expr
-> evaluate tms e = case checkAll [] (map mkDecl tms) of
->                    Just (_, tms') -> eval (map mkEvalDecl tms') 
->                                           (mkHOAS (doRtoV (evalState (term e) 0)))
+> evaluate tms e = eval (eval_decls tms) 
+>                       (mkHOAS (doRtoV (evalState (term e) 0)))
 
 Some useful functions
 

@@ -153,7 +153,7 @@ with the primitives (from SDLprims) and the user's program.
 >                     let eprog = map mkEpic prog
 >                     let incs = [Include sdlh,
 >                                 Include "math.h"]
->                     compileObj (incs ++ sdlPrims ++ 
->                                 EpicFn (name "main") runMain : eprog)
+>                     compileObj (mkProgram (incs ++ sdlPrims ++ 
+>                                 EpicFn (name "main") runMain : eprog))
 >                                 (fp++".o")
 >                     linkWith opts [fp++".o", sdlo] fp

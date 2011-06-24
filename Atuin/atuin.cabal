@@ -23,4 +23,4 @@ Executable     atuin
                hs-source-dirs: src
                Other-modules: Turtle MkEpic SDLprims Lexer Parser Paths_atuin
                Build-depends: base >=4 && <5, haskell98, Cabal, array,
-                              directory, epic >=0.1.10
+                              directory, epic >=0.1.13
