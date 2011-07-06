@@ -12,29 +12,53 @@ the source language (e.g. its type system) or there may simply be no
 clearly defined API. As a result, experimental languages such as
 Agda~\cite{norell-thesis} have resorted to generating Haskell, using
 \texttt{unsafeCoerce} to bypass the type system. Similarly,
-Cayenne~\cite{cayenne-icfp} used LML with the type checker switched
-off. This is not ideal for several reasons: we cannot expect to use
-the full power and optimisations of the underlying compiler, nor can
-we expect it to exploit any specific features of our new source
+Cayenne~\cite{cayenne-icfp} generated LML bypassing the type
+checker. This is not ideal for several reasons: we cannot expect to
+use the full power and optimisations of the underlying compiler, nor
+can we expect it to exploit any specific features of our new source
 language, such as the optimisation opportunities presented by rich
-dependent type systems.
+dependent type systems~\cite{brady-thesis}.
 
-Epic aims to provide the necessary features for implementing the
-back-end of a functional language --- thunks, closures, algebraic data
-types, scope management, lambda lifting --- without imposing
-\remph{any} design choices on the high level language designer, with
-the obvious exception that a functional style is encouraged!  The
-library provides \remph{compiler combinators}, which guarantee that
-any output code will be syntactically correct and well-scoped.  This
-gives a simple method for building a compiler for a new functional
-language, e.g. for experimentation with new type systems or new domain
-specific languages.
+Epic is a library which aims to provide the necessary features for
+implementing the back-end of a functional language --- thunks,
+closures, algebraic data types, scope management, lambda lifting ---
+without imposing \remph{any} design choices on the high level language
+designer, other than encouraging a functional style. It
+provides \remph{compiler combinators}, which guarantee that any output
+code will be syntactically correct and well-scoped.  This gives a
+simple method for building a compiler for a new functional language,
+e.g. for experimentation with new type systems or new domain specific
+languages. In this paper, we describe Epic and its API using two
+example high level languages. More generally, we observe that:
 
+\begin{enumerate}
+\item Recent language and type system research has typically been
+  based on extensions of existing languages, notably Haskell. While
+  this makes implementation easier as it builds on an existing
+  language, it discourages significant departures from the existing
+  language (e.g. full dependent types). With Epic, we encourage
+  more radical experiments by providing a standalone path to a realistic,
+  efficient, language implementation.
+\item A tool can become significantly more useful if it is embeddable in
+  other systems. A language back end is no different --- by providing
+  an API for Epic, we make it more widely applicable. Haskell's
+  expressiveness, particularly through type classes, makes it simple
+  to provide an appropriate API for describing the core language.
+\item Epic's small core and clearly defined API makes it a potential
+  platform for experimentation with optimisations and new back
+  ends. Indeed, we avoid implementation details in
+  this paper. Several implementations are possible, perhaps targetting
+  .NET or the JVM as well as native code.
+\end{enumerate}
+
+\noindent
 Epic was originally written as a back end for
 Epigram~\cite{levitation} (the name\footnote{Coined by James McKinna}
 is short for ``\textbf{Epi}gram \textbf{C}ompiler''). It is now used
 by Idris~\cite{plpv11} and as an experimental back end for
 Agda. It is specifically designed for reuse by other source languages.
+
+
 
 
 

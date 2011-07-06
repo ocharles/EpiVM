@@ -137,19 +137,17 @@ type Defs = [(Id,  Proc)]
 
 While Atuin is a different kind of language from the
 $\lambda$-calculus, with complicating factors such as a global state
-(the turtle). imperative features, and dynamic type checking, the
+(the turtle), imperative features, and dynamic type checking, the
 process of constructing a compiler follows the same general recipe, i.e.
 define primitive operations as Epic functions, then convert each Atuin
 definition into the corresponding Epic definition.
 
 \subsubsection{Compiling Primitives}
 
-The first step in defining a compiler for Atuin is to define primitive
-operations as Epic functions. 
-The language is dynamically
-typed, therefore we will need primitive operations to check that they
-are operating on the correct types. We define functions which
-construct Epic code for
+The first step is to define primitive operations as Epic functions.
+The language is dynamically typed, therefore we will need primitive
+operations to check dynamically that they are operating on values of
+the correct type. We define functions which construct Epic code for
 building values, effectively using a single algebraic datatype to
 capture all possible run-time values (i.e. values are
 ``uni-typed''~\cite{wadlerblame}).
@@ -166,13 +164,12 @@ mkcol  c = con_ 3 @@ c
 
 \noindent
 Correspondingly, we can extract the concrete values safely from this
-structure, checking that the value is the required type:
+structure, checking that the value is the required type, e.g.:
 
 \begin{SaveVerbatim}{epicgetval}
 
-getInt x  = case_ x 
-            [con 0 (\ (x :: Expr) -> x), 
-             defaultcase (error_ "Not an Int")]
+getInt x  = case_ x [con 0 (\ (x :: Expr) -> x), 
+                     defaultcase (error_ "Not an Int")]
 
 \end{SaveVerbatim}
 \useverb{epicgetval}
@@ -180,7 +177,7 @@ getInt x  = case_ x
 \noindent
 Similarly, \texttt{getChar}, \texttt{getBool} and \texttt{getCol}
 check and extract values of the appropriate type.
-Using these, it is simple to define primitve arithmetic operations
+Using these, it is simple to define primitive arithmetic operations
 which check they are operating on the correct type, and report an
 error if not.
 
@@ -190,7 +187,6 @@ primPlus   x y = mkint $ op_ plus_   (getInt x) (getInt y)
 primMinus  x y = mkint $ op_ minus_  (getInt x) (getInt y)
 primTimes  x y = mkint $ op_ times_  (getInt x) (getInt y)
 primDivide x y = mkint $ op_ divide_ (getInt x) (getInt y)
-
 \end{SaveVerbatim}
 \useverb{primops}
 
@@ -204,9 +200,8 @@ call these functions. For example:
 \begin{SaveVerbatim}{sdlglue}
 
 void* startSDL(int x, int y);
-void  drawLine(void* surf,
-               int x, int y, int ex, int ey,
-               int r, int g, int b, int a);
+void  drawLine(void* surf, int x, int y, int ex, int ey,
+                           int r, int g, int b, int a);
 
 \end{SaveVerbatim}
 \useverb{sdlglue}
@@ -220,15 +215,14 @@ alpha channels.
 
 We represent colours as a 4-tuple $(\vr,\vg,\vb,\va)$.  Drawing a line
 in Epic involves extracting the red, green, blue and alpha components
-from this tuple, then calling the C \texttt{drawLine} function. Recall
-that to make a foreign function call, we give the types of each
-argument explicitly so that Epic will know how to convert from
-internal values to C values:
+from this tuple, then calling the C \texttt{drawLine} function. To
+make a foreign function call, we use \texttt{foreign\_}, giving the C
+function name and explicit types for each argument so that Epic
+will know how to convert from internal values to C values:
 
 \begin{SaveVerbatim}{drawline}
 
-drawLine :: Expr -> Expr -> Expr -> 
-            Expr -> Expr -> Expr -> Term
+drawLine :: Expr -> Expr -> Expr -> Expr -> Expr -> Expr -> Term
 drawLine surf x y ex ey col
     = case_ (rgba col)
         [tuple (\ r g b a ->
@@ -240,17 +234,17 @@ drawLine surf x y ex ey col
 \end{SaveVerbatim}
 \useverb{drawline}
 
-When we compile Atuin programs, we treat the turtle state as a tuple
+\noindent
+The turtle state is a tuple
 $(\vs,\vx,\vy,\vd,\vc,\vp)$ where $\vs$ is a pointer to the SDL
-surface, $\vx$ and $\vy$ give the turtle's location, $\vd$ gives the
-turtle's direction, $\vc$ gives the colour and $\vp$ gives the pen
+surface, ($\vx$, $\vy$) gives the turtle's location, $\vd$ gives its
+direction, $\vc$ gives the colour and $\vp$ gives the pen
 state (a boolean, false for up and true for down). Note that this
-state is not accessible by the programmer, so we do not need any
-dynamic type checking of each component.
-
+state is not accessible by Atuin programs, so we do not dynamically check
+each component.
 To implement the \texttt{forward} operation, for example, we take the
-current turtle state, update the position according to the distance
-given and the current direction, and if the pen us down, draws a line
+current state, update the position according to the distance
+given and the current direction, and if the pen is down, draws a line
 from the old position to the new position.
 
 \begin{SaveVerbatim}{drawfwd}
@@ -277,32 +271,32 @@ function, using Epic's application operator (\texttt{@@}).
 
 \subsubsection{Compiling Programs}
 
-Programs return an updated turtle state, and possibly perform some
-side-effects such as drawing. We can think of Atuin definitions with
-arguments $\va_1$ to $\va_n$ as being translated to an Epic function
+Programs return an updated turtle state, and possibly perform 
+side-effects such as drawing. An Atuin definition with
+arguments $\va_1\ldots\va_n$ is translated to an Epic function
 with a type of the following form:
 
 \DM{
 \vf \Hab \VV{State} \to \va_1 \to \ldots \to \va_n \to \VV{State}
 }
 
+\noindent
 To compile a complete program, we add the primitive functions we have
 defined above (line drawing, turtle movement, etc) to the list of
 basic Epic definitions, and convert the user defined procedures to Epic.
 
 \begin{SaveVerbatim}{prims}
 
-prims = basic_defs ++
-        [EpicFn (name "initSDL") initSDL,
-         EpicFn (name "drawLine") drawLine,
-         EpicFn (name "forward") forward, ... ]
+prims = basic_defs ++ [EpicFn (name "initSDL") initSDL,
+                       EpicFn (name "drawLine") drawLine,
+                       EpicFn (name "forward") forward, ... ]
 
 \end{SaveVerbatim}
 \useverb{prims}
 
 \noindent
-We will need to convert expressions, commands and full programs into
-Epic terms, so define a type class to capture all of these. Programs
+We define a type class to capture conversion of expressions, commands
+and full programs into Epic terms. Programs
 maintain the turtle's state (an Epic \texttt{Expr}), and return a new
 state, so we pass this state to the compiler.
 
@@ -314,6 +308,7 @@ class Compile a where
 \end{SaveVerbatim}
 \useverb{compileclass}
 
+\noindent
 In general, since we have set up all of the primitive operations as
 Epic functions, compiling an Atuin program consists of directly
 translating the abstract syntax to the Epic equivalent, making sure
@@ -324,8 +319,7 @@ argument. Epic takes strings as identifiers, so we use \texttt{fullId
 
 \begin{SaveVerbatim}{compfn}
 
-compile state (Call i es) 
-     = app (fn fullId i) @@ state) es
+compile state (Call i es) = app (fn fullId i) @@ state) es
    where app f [] = f
          app f (e:es) = app (f @@ compile state e) es
 
@@ -371,9 +365,8 @@ user defined \texttt{main} function:
 
 \begin{SaveVerbatim}{runmain}
 
-init_turtle surf = tuple_ @@ surf @@ 
-                             int 320 @@ int 240 @@ int 180 @@ 
-                             col_white @@ bool True
+init_turtle surf = tuple_ @@ surf @@ int 320 @@ int 240 @@ 
+                                     int 180 @@ col_white @@ bool True
 
 runMain :: Term
 runMain = let_ (fn "initSDL" @@ int 640 @@ int 480)
@@ -384,6 +377,7 @@ runMain = let_ (fn "initSDL" @@ int 640 @@ int 480)
 \end{SaveVerbatim}
 \useverb{runmain}
 
+\noindent
 The full source code for Atuin and its compiler is available from
 Hackage (\url{http://hackage.haskell.org/package/atuin}), which
 covers the remaining technical details of linking compiled programs

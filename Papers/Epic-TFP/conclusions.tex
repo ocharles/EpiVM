@@ -12,11 +12,14 @@ can be competitive with Java and is not significantly worse than C.
 Epic uses techniques from other functional language back
 ends~\cite{evalpush,stg,abc-machine} but deliberately exposes its core
 language as an API to make it as reusable as possible. Although there
-is likely to always be a trade off between reusability and efficiency,
+is always likely to be a trade off between reusability and efficiency,
 exposing the API will make it easier for other language researchers to
 build a new compiler quickly. The Lazy Virtual Machine~\cite{lvm} has
 similar goals but it designed as a lower level target language, rather
-than a high level API. 
+than a high level API. C\texttt{--}~\cite{c--} and LLVM~\cite{llvm} are also
+tools for generating language back ends, but are similarly low level and
+do not provide direct support for functional features. We could
+nevertheless consider using these tools for Epic code generation.
 
 %C--~\cite{c--} and LLVM~\cite{llvm}
 %as possible code generation strategies. Supercompilation for
@@ -31,28 +34,42 @@ providing an API for generating a compiler, dealing with
 well-understood but difficult to implement problems such as lambda
 lifting, code generation, interfacing with foreign functions and
 garbage collection. 
-
 In this paper we have seen two examples of languages which can be
 compiled via Epic, both functionally based, but with different
 features. The high-level recipe for each is the same: define primitive
 functions as run-time support, then translate the abstract syntax into
-concrete Epic functions, using a combinator style API.
+concrete Epic functions, using a combinator style API.  In addition,
+we have implemented a compiler for \LamPi{}~\cite{simply-easy}, a
+dependently typed language, which shows how Epic can handle languages
+with more expressive type
+systems\footnote{\url{http://www.idris-lang.org/examples/LambdaPi.hs}}.
+
 
 \subsubsection{Future work}
 
-Epic is currently used in practice by a dependently typed functional
-language, Idris~\cite{plpv11}, and experimentally by
-Agda~\cite{norell-thesis} and Epigram~\cite{levitation}. Future work
-will therefore have an emphasis on providing an efficient executable
-environment for these and related languages. An interesting research
-question, for example, is whether the rich type systems of these languages
-can be used to guide optimisation, and if so how to present the
-information gained by the type system to the compiler.
+%Epic is currently used in practice by a dependently typed functional
+%language, Idris~\cite{plpv11}, and experimentally by
+%Agda~\cite{norell-thesis} and Epigram~\cite{levitation}. 
+
+Since Epic is currently used in practice by a number of dependently
+typed functional languages, future work will have an emphasis on
+providing an efficient executable environment for these and related
+languages. An interesting research question, for example, is whether
+the rich type systems of these languages can be used to guide
+optimisation, and if so how to present the information gained by the
+type system to the compiler.
 
 Currently, Epic compiles to machine code via C, using the Boehm
 conservative garbage collector~\cite{boehm-gc}. While this has been
 reasonably efficient in practice, we believe that an LLVM based
 implementation~\cite{llvm,llvm-haskell} with accurate garbage
-collection would be more appropriate. Of course, any language which
-uses Epic as a back end will stand to gain from future optimisation
-efforts!
+collection would be more appropriate as it could take advantage of
+functional language features such as immutability of data. 
+
+Perhaps more importantly, as a very simple functional language Epic is
+a convenient platform with which to experiment with functional
+compilation techniques. For example, we are developing an evaluator
+which will be a starting point for experimenting with
+supercompilation~\cite{mitchell-super} and partial evaluation.
+Of course, any language which uses Epic as a back end will stand to
+gain from future optimisation efforts!

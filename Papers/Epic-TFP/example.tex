@@ -3,23 +3,24 @@
 \label{sec:lc}
 
 In this section we present a compiler for a simple high level
-language.
-This is a compiler for the untyped $\lambda$-calculus using Higher Order
-Abstract Syntax, which shows the fundamental features of Epic required
-to implement a complete compiler. We have also implemented compilers
-for \LamPi{}~\cite{simply-easy}, a dependently typed language, which
-shows how Epic can handle languages with more expressive type systems,
-and a dynamically typed graphics language\footnote{\url{http://hackage.haskell.org/package/atuin}}, which shows how Epic can be
-used for languages with run-time type checking and which require
-foreign function calls.
+language, the untyped $\lambda$-calculus using higher order abstract
+syntax. This shows the fundamental features of Epic required to
+implement a complete compiler.
+
+%We have also implemented compilers
+%for \LamPi{}~\cite{simply-easy}, a dependently typed language, which
+%shows how Epic can handle languages with more expressive type systems,
+%and a dynamically typed graphics language\footnote{\url{http://hackage.haskell.org/package/atuin}}, which shows how Epic can be
+%used for languages with run-time type checking and which require
+%foreign function calls.
 
 \subsection{Representation}
 
 Our example is an implementation of the untyped
 $\lambda$-calculus, plus primitive integers and strings, and
-arithmetic and string operators. The language is represented in
-Haskell using higher order abstract syntax (HOAS).  That is, we
-represent $\lambda$-bindings (\texttt{Lam}) as Haskell functions,
+arithmetic and string operators. The Haskell representation uses
+higher order abstract syntax (HOAS), i.e. we
+represent $\lambda$-bindings (\texttt{Lam}) as functions,
 using a Haskell variable name to refer to the locally bound
 variable. We also include global references (\texttt{Ref}) which refer
 to top level functions, function application (\texttt{App}), constants
@@ -82,8 +83,6 @@ Recall that a program is a collection of named Epic declarations:
 \begin{SaveVerbatim}{eprogs}
 
 data EpicDecl = forall e. EpicExpr e => EpicFn Name e
-              | ...
-
 type Program = [EpicDecl]
 
 \end{SaveVerbatim}
@@ -168,16 +167,22 @@ build (Op Append l r) = fn "append" @@ build l @@ build r
 Given \texttt{build}, we can translate a collection of HOAS
 definitions into an Epic program, add the built-in Epic definitions
 and execute it directly. Recall that there must be a function called
-\texttt{"main"} or Epic will report an error.
+\texttt{"main"} or Epic will report an error --- we therefore add a
+main function which prints the value of an integer expression
+given at compile time.
 
 \begin{SaveVerbatim}{lmain}
 
-mkProgram :: Defs -> Program
-mkProgram ds = basic_defs ++ 
-               map (\ (n, d) -> EpicFn n (build d)) ds
+main_ exp = App (Ref (name "putStrLn"))
+                (App (Ref (name "intToString")) exp)
 
-execute :: Defs -> IO ()
-execute p = run (mkProgram p)
+mkProgram :: Defs -> Lang -> Program
+mkProgram ds exp = basic_defs ++ 
+                   map (\ (n, d) -> EpicFn n (build d)) ds ++
+                   [(name "main", main_ exp)]
+
+execute :: Defs -> Lang -> IO ()
+execute p exp = run (mkProgram p exp)
 
 \end{SaveVerbatim}
 \useverb{lmain}
@@ -188,8 +193,8 @@ is the Epic function called \texttt{"main"}:
 
 \begin{SaveVerbatim}{lcomp}
 
-comp :: Defs -> IO ()
-comp p = compile "a.out" (mkProgram p)
+comp :: Defs -> Lang -> IO ()
+comp p exp = compile "a.out" (mkProgram p exp)
 
 \end{SaveVerbatim}
 \useverb{lcomp}
