@@ -1,5 +1,3 @@
-> {-# OPTIONS_GHC -fglasgow-exts #-}
-
 > module Main where
 
 > import Lang

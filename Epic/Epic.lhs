@@ -1,4 +1,5 @@
-> {-# OPTIONS_GHC -fglasgow-exts #-}
+> {-# LANGUAGE ExistentialQuantification, ScopedTypeVariables,
+> FlexibleInstances, TypeSynonymInstances #-}
 
 > -- |
 > -- Module      : Epic.Epic

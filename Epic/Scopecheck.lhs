@@ -1,4 +1,4 @@
-> {-# OPTIONS_GHC -fglasgow-exts -XFlexibleInstances #-}
+> {-# OPTIONS_GHC -XFlexibleInstances #-}
 
 > module Epic.Scopecheck where
 

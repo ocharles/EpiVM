@@ -1,4 +1,5 @@
-> {-# OPTIONS_GHC -fglasgow-exts -XFlexibleInstances #-}
+> {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses,
+> FunctionalDependencies #-}
 
 > module Epic.Language where
 

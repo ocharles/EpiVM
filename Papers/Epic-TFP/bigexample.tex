@@ -51,22 +51,19 @@ must be called \texttt{main} and take no arguments:
 main() {
   polygon(10,25,red)
 }
-
 \end{SaveVerbatim}
 \useverb{atuinmain}
 
 \subsection{Abstract Syntax}
 
-In this section we discuss the abstract syntax of Atuin, as algebraic
-data types constructed by a Happy-generated parser. Constants can be
-one of four types: integers, characters, booleans and colours:
+The abstract syntax of Atuin is defined by algebraic data types
+constructed by a Happy-generated parser. Constants can be one of four
+types: integers, characters, booleans and colours:
 
 \begin{SaveVerbatim}{consts}
 
-data Const = MkInt Int
-           | MkChar Char
-           | MkBool Bool
-           | MkCol Colour
+data Const = MkInt Int   | MkChar Char
+           | MkBool Bool | MkCol Colour
 
 data Colour = Black | Red | Green | Blue | ...
 
@@ -75,22 +72,24 @@ data Colour = Black | Red | Green | Blue | ...
 
 \noindent
 Atuin is an imperative language, consisting of sequences of commands
-applied to expressions, therefore we define expressions (\texttt{Exp})
+applied to expressions. We define expressions (\texttt{Exp})
 and procedures (\texttt{Turtle}) mutually. Expressions can be constants
-or variables, and combined by infix operators. Additionally, we have
-code blocks in expressions to pass to higher order procedures.
+or variables, and combined by infix operators. Expressions can include
+code blocks to pass to higher order procedures.
 
 \begin{SaveVerbatim}{expr}
 
-data Exp = Infix Op Exp Exp
-         | Var Id
-         | Const Const
-         | Block Turtle
+data Exp = Infix Op Exp Exp | Var Id
+         | Const Const      | Block Turtle
+\end{SaveVerbatim}
+\useverb{expr}
+
+\begin{SaveVerbatim}{opexpr}
 
 data Op = Plus | Minus | Times  | Divide | ...
 
 \end{SaveVerbatim}
-\useverb{expr}
+\useverb{opexpr}
 
 \noindent
 Procedures define sequences of potentially side-effecting turtle
@@ -99,12 +98,9 @@ simple control structures. \texttt{Pass} defines an empty code block:
 
 \begin{SaveVerbatim}{turtle}
 
-data Turtle = Call Id [Exp]
-            | Turtle Command
-            | Seq Turtle Turtle
-            | If Exp Turtle Turtle
-            | Let Id Exp Turtle
-            | Eval Exp
+data Turtle = Call Id [Exp]     | Turtle Command
+            | Seq Turtle Turtle | If Exp Turtle Turtle
+            | Let Id Exp Turtle | Eval Exp
             | Pass
 
 \end{SaveVerbatim}

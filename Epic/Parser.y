@@ -1,5 +1,4 @@
 { -- -*-Haskell-*-
-{-# OPTIONS_GHC -fglasgow-exts #-}
 
 module Epic.Parser where
 
