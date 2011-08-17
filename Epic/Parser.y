@@ -2,7 +2,7 @@
 
 module Epic.Parser where
 
-import Char
+import Data.Char
 import System.IO.Unsafe
 
 import Epic.Language

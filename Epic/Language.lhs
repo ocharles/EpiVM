@@ -4,7 +4,6 @@
 > module Epic.Language where
 
 > import Control.Monad
-> import System
 > import System.IO
 > import System.Directory
 > import System.Environment

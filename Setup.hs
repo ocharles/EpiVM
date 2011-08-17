@@ -3,7 +3,8 @@ import Distribution.Simple.InstallDirs
 import Distribution.Simple.LocalBuildInfo
 import Distribution.PackageDescription
 
-import System
+import System.Exit
+import System.Process
 
 -- After Epic is built, we need a run time system.
 

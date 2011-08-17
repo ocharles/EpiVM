@@ -1,11 +1,11 @@
 > module Main where
 
-> import System
+> import System.Exit
 > import System.Directory
 > import System.Environment
 > import System.IO
 > import Distribution.Version
-> import Monad
+> import Control.Monad
 
 > import Epic.Compiler
 > import Paths_epic

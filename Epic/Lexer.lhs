@@ -1,6 +1,6 @@
 > module Epic.Lexer where
 
-> import Char
+> import Data.Char
 
 > import Epic.Language
 

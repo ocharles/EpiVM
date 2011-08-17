@@ -17,11 +17,12 @@
 
 Brings everything together; parsing, checking, code generation
 
-> import System
+> import System.Process
+> import System.Exit
 > import System.IO
 > import System.Directory
 > import System.Environment
-> import Char
+> import Data.Char
 
 > import Epic.Language
 > import Epic.Parser
