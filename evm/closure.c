@@ -1220,7 +1220,7 @@ void epic_main(int argc, char* argv[])
 	fprintf(stderr, "Warning: roots left %d\n", vm->roots-vm->start_roots);
     }
 */
-    epicMemInfo();
+//    epicMemInfo();
     close_evm(vm);
 }
 
