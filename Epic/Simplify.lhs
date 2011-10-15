@@ -49,6 +49,7 @@ Also consider creating specialised versions of functions?
 >             _ -> R fn
 >     s' args d (App f a) = apply d (s' args d f) (map (s' args d) a) args
 >     s' args d (Lazy e) = Lazy $ s' args d e
+>     s' args d (Par e) = Par $ s' args d e
 >     s' args d (Effect e) = Effect $ s' args d e
 >     s' args d (While t e) = While (s' args d t) (s' args d e)
 >     s' args d (WhileAcc t a e) = WhileAcc (s' args d t) (s' args d a) (s' args d e)

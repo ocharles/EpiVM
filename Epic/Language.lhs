@@ -9,6 +9,7 @@
 > import System.Environment
 
 > import Debug.Trace
+> import Data.Char
 
 > -- | (Debugging) options to give to compiler
 > data CompileOptions = KeepC -- ^ Keep intermediate C file
@@ -88,7 +89,8 @@ Raw data types. Int, Char, Bool are unboxed.
 > quotename ('$':cs) = "_DO_"++quotename cs
 > quotename ('#':cs) = "_HA_"++quotename cs
 > quotename ('@':cs) = "_AT_"++quotename cs
-> quotename (c:cs) = c:(quotename cs)
+> quotename (c:cs) | isAlphaNum c = c:(quotename cs)
+>                  | otherwise = "_" ++ show (fromEnum c) ++ "_" ++ quotename cs
 
 > showC n = quotename (show n)
 
@@ -109,6 +111,7 @@ Get the arity of a definition in the context
 >           | App Expr [Expr] -- Function application
 >           | Lazy Expr -- Lazy function application
 >           | Effect Expr -- Expression with side effects (i.e. don't update when EVALing)
+>           | Par Expr -- evaluate an expression in parallel
 >           | Con Tag [Expr] -- Constructor, tags, arguments (fully applied)
 >           | Const Const -- a constant
 >           | Proj Expr Int -- Project argument
@@ -178,6 +181,7 @@ Get the arity of a definition in the context
 >     show (R n) = show n
 >     show (App f as) = show f ++ show as
 >     show (Lazy e) = "%lazy(" ++ show e ++ ")"
+>     show (Par e) = "%par(" ++ show e ++ ")"
 >     show (Effect e) = "%effect(" ++ show e ++ ")"
 >     show (Con t es) = "Con " ++ show t ++ show es
 >     show (Const c) = show c
@@ -250,6 +254,7 @@ Programs
 >     subst v rep (V x) | v == x = rep
 >     subst v rep (App x xs) = App (subst v rep x) (subst v rep xs)
 >     subst v rep (Lazy x) = Lazy (subst v rep x)
+>     subst v rep (Par x) = Par (subst v rep x)
 >     subst v rep (Effect x) = Effect (subst v rep x)
 >     subst v rep (Con t xs) = Con t (subst v rep xs)
 >     subst v rep (Proj x i) = Proj (subst v rep x) i
@@ -296,6 +301,7 @@ Programs
 > instance HOAS Expr Expr where
 >     hoas v (App f xs) = App (hoas v f) (hoas v xs)
 >     hoas v (Lazy x) = Lazy (hoas v x)
+>     hoas v (Par x) = Par (hoas v x)
 >     hoas v (Effect x) = Effect (hoas v x)
 >     hoas v (Con t xs) = Con t (hoas v xs)
 >     hoas v (Proj x i) = Proj (hoas v x) i

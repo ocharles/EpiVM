@@ -1,6 +1,6 @@
 \section{Introduction}
 
-When implementing a new language, whether for research purposes or as
+When implementing a new programming language, whether for research purposes or as
 a realistic general purpose language, we are inevitably faced with the
 problem of executing the language. Ideally, we would like execution to
 be as fast as possible, and exploit known techniques from many years
@@ -8,7 +8,7 @@ of compiler research. However, it is difficult to make use of the
 existing available back ends for functional langauges, such as the
 STG~\cite{evalpush,stg,llvm-haskell} or ABC~\cite{abc-machine}
 machines. They may be too low level, they may make assumptions about
-the source language (e.g. its type system) or there may simply be no
+the source language (e.g., its type system) or there may simply be no
 clearly defined API. As a result, experimental languages such as
 Agda~\cite{norell-thesis} have resorted to generating Haskell, using
 \texttt{unsafeCoerce} to bypass the type system. Similarly,
@@ -27,7 +27,7 @@ designer, other than encouraging a functional style. It
 provides \remph{compiler combinators}, which guarantee that any output
 code will be syntactically correct and well-scoped.  This gives a
 simple method for building a compiler for a new functional language,
-e.g. for experimentation with new type systems or new domain specific
+e.g., for experimentation with new type systems or new domain specific
 languages. In this paper, we describe Epic and its API using two
 example high level languages. More generally, we observe that:
 
@@ -36,7 +36,7 @@ example high level languages. More generally, we observe that:
   based on extensions of existing languages, notably Haskell. While
   this makes implementation easier as it builds on an existing
   language, it discourages significant departures from the existing
-  language (e.g. full dependent types). With Epic, we encourage
+  language (e.g., full dependent types). With Epic, we encourage
   more radical experiments by providing a standalone path to a realistic,
   efficient, language implementation.
 \item A tool can become significantly more useful if it is embeddable in

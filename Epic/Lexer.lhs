@@ -116,6 +116,7 @@
 >       | TokenUnused
 >       | TokenIn
 >       | TokenLazy
+>       | TokenPar
 >       | TokenStrict
 >       | TokenEffect
 >       | TokenError
@@ -268,6 +269,7 @@
 >       ("else",rest) -> cont TokenElse rest
 >       ("in",rest) -> cont TokenIn rest
 >       ("lazy",rest) -> cont TokenLazy rest
+>       ("par",rest) -> cont TokenPar rest
 >       ("error",rest) -> cont TokenError rest
 >       ("impossible",rest) -> cont TokenImpossible rest
 >       ("foreign",rest) -> cont TokenForeign rest

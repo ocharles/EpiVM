@@ -2,10 +2,9 @@
 
 \label{sec:lc}
 
-In this section we present a compiler for a simple high level
-language, the untyped $\lambda$-calculus using higher order abstract
-syntax. This shows the fundamental features of Epic required to
-implement a complete compiler.
+In this section we present a compiler for the untyped $\lambda$-calculus using
+HOAS, showing the fundamental features of Epic
+required to build a complete compiler.
 
 %We have also implemented compilers
 %for \LamPi{}~\cite{simply-easy}, a dependently typed language, which
@@ -16,15 +15,12 @@ implement a complete compiler.
 
 \subsection{Representation}
 
-Our example is an implementation of the untyped
-$\lambda$-calculus, plus primitive integers and strings, and
-arithmetic and string operators. The Haskell representation uses
-higher order abstract syntax (HOAS), i.e. we
-represent $\lambda$-bindings (\texttt{Lam}) as functions,
-using a Haskell variable name to refer to the locally bound
-variable. We also include global references (\texttt{Ref}) which refer
-to top level functions, function application (\texttt{App}), constants
-(\texttt{Const}) and binary operators (\texttt{Op}):
+Our example is an implementation of the untyped $\lambda$-calculus, plus
+primitive integers and strings, and arithmetic and string operators. The
+Haskell representation uses higher order abstract syntax (HOAS). We also
+include global references (\texttt{Ref}) which refer to top level functions,
+function application (\texttt{App}), constants (\texttt{Const}) and binary
+operators (\texttt{Op}):
 
 \begin{SaveVerbatim}{llang}
 
@@ -71,6 +67,7 @@ type Defs = [(Name, Lang)]
 \end{SaveVerbatim}
 \useverb{lprogs}
 
+\vspace*{0.5em}
 \subsection{Compilation}
 
 Our aim is to convert a collection of \texttt{Defs} into an
@@ -126,8 +123,7 @@ build (Op op l r)      = op_ (eOp op) (build l) (build r)
 \codefig{lcompile}{Compiling Untyped $\lambda$-calculus}
 
 %\noindent
-The cases worth noting are the compilation of $\lambda$-bindings and
-string concatenation. Using HOAS has the advantage that Haskell can
+Using HOAS has the advantage that Haskell can
 manage scoping, but the disadvantage that it is not straightforward to
 convert the abstract syntax into another form. The Epic API also
 allows scope management using HOAS, so we need to convert a function
@@ -149,9 +145,9 @@ build (Lam f) = term (\x -> build (f (EpicRef x)))
 To convert a \texttt{Lang} function to an Epic function, we build an
 Epic function in which we apply the \texttt{Lang} function to the Epic
 reference for its argument. Every reference to a name in \texttt{Lang}
-is converted to the equivalent reference to the name in Epic. While
-there may be neater solutions involving an environment, or avoiding
-HOAS, this solution is very simple to implement, and preserves the
+is converted to the equivalent reference to the name in Epic. 
+Although it seems undesirable to extend \texttt{Lang} in this way, this
+solution is simple to implement and preserves the
 desirable feature that Haskell manages scope.
 Compiling string append uses a built in function provided by the Epic
 interface in \texttt{basic\_defs}:
@@ -166,8 +162,8 @@ build (Op Append l r) = fn "append" @@ build l @@ build r
 \noindent
 Given \texttt{build}, we can translate a collection of HOAS
 definitions into an Epic program, add the built-in Epic definitions
-and execute it directly. Recall that there must be a function called
-\texttt{"main"} or Epic will report an error --- we therefore add a
+and execute it directly. Recall that there must be a 
+\textit{main} function or Epic will report an error --- we therefore add a
 main function which prints the value of an integer expression
 given at compile time.
 
@@ -189,7 +185,7 @@ execute p exp = run (mkProgram p exp)
 
 \noindent
 Alternatively, we can generate an executable. Again, the entry point
-is the Epic function called \texttt{"main"}:
+is the Epic function \textit{main}:
 
 \begin{SaveVerbatim}{lcomp}
 
@@ -200,7 +196,7 @@ comp p exp = compile "a.out" (mkProgram p exp)
 \useverb{lcomp}
 
 \noindent
-This is a compiler for a very simple language, but a compiler for any
+This is a compiler for a very simple language, but a compiler for a
 more complex language follows the same pattern: convert the abstract
 syntax for each named definition into a named Epic \texttt{Term}, add
 any required primitives (we have just used \texttt{basic\_defs} here),

@@ -27,7 +27,7 @@
 >                  Type, tyInt, tyChar, tyBool, tyFloat, tyString,
 >                  tyPtr, tyUnit, tyAny, tyC,
 >                  -- * Operators
->                  plus_, minus_, times_, divide_, 
+>                  Op, plus_, minus_, times_, divide_, 
 >                  plusF_, minusF_, timesF_, divideF_,
 >                  eq_, lt_, lte_, gt_, gte_, 
 >                  eqF_, ltF_, lteF_, gtF_, gteF_, shiftl_, shiftr_,

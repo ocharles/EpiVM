@@ -22,6 +22,7 @@ then we have an error. Returns expression in standard form.
 >                        xs' <- mapM ev xs
 >                        evFn f' xs'
 >     ev (Lazy e) = ev e
+>     ev (Par e) = ev e
 >     ev (Effect e) = ev e
 >     ev (Con t es) = do es' <- mapM ev es
 >                        return $ Con t es'
@@ -135,6 +136,7 @@ then we have an error. Returns expression in standard form.
 > instance Quote Expr where
 >     quote v (App x xs) = App (quote v x) (quote v xs)
 >     quote v (Lazy x) = Lazy (quote v x)
+>     quote v (Par x) = Par (quote v x)
 >     quote v (Effect x) = Effect (quote v x)
 >     quote v (Con t xs) = Con t (quote v xs)
 >     quote v (Proj x i) = Proj (quote v x) i

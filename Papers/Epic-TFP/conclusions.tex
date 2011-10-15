@@ -14,11 +14,20 @@ ends~\cite{evalpush,stg,abc-machine} but deliberately exposes its core
 language as an API to make it as reusable as possible. Although there
 is always likely to be a trade off between reusability and efficiency,
 exposing the API will make it easier for other language researchers to
-build a new compiler quickly. The Lazy Virtual Machine~\cite{lvm} has
-similar goals but it designed as a lower level target language, rather
-than a high level API. C\texttt{--}~\cite{c--} and LLVM~\cite{llvm} are also
-tools for generating language back ends, but are similarly low level and
-do not provide direct support for functional features. We could
+build a new compiler quickly. 
+%
+As far as we are aware, Epic occupies a unique point in the design space of
+code generation tools --- it is sufficiently high level that it captures common
+functional language abstractions without being so high level that it imposes
+constraints such as a type system on the language it is compiling. 
+Alonzo, for example, is a prototype compiler for Agda~\cite{alonzo} which compiles
+via GHC, but requires coercions in the generated code in order for it to be accepted
+by GHC's type checker. Coq's program extraction tool~\cite{extraction-coq}
+also aims to generate executable code via a high level language, similarly requiring
+coercions where Coq terms can not be given a type in the high level language.
+In contrast, systems such as the Lazy Virtual Machine~\cite{lvm},
+C\texttt{--}~\cite{c--} and LLVM~\cite{llvm} are
+designed as lower level target languages rather than high level APIs. We could
 nevertheless consider using these tools for Epic code generation.
 
 %C--~\cite{c--} and LLVM~\cite{llvm}
@@ -31,8 +40,9 @@ Epic provides a simple path for language researchers to convert
 experimental languages (e.g. experimenting with new type systems or
 domain specific language design) into larger scale, usable tools, by
 providing an API for generating a compiler, dealing with
-well-understood but difficult to implement problems such as lambda
-lifting, code generation, interfacing with foreign functions and
+well-understood but difficult to implement problems such as 
+naming and scope management,
+code generation, interfacing with foreign functions and
 garbage collection. 
 In this paper we have seen two examples of languages which can be
 compiled via Epic, both functionally based, but with different

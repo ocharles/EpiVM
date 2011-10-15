@@ -7,7 +7,7 @@ TEXFILES = ${PAPER}.tex intro.tex language.tex example.tex \
 
 DIAGS = 
 
-SOURCES = ${TEXFILES} ${DIAGS} macros.ltx literature.bib
+SOURCES = ${TEXFILES} ${DIAGS} macros.ltx comments.sty library.ltx llncs.cls literature.bib
 
 DITAA = java -jar ~/Downloads/ditaa.jar
 
@@ -33,4 +33,6 @@ progress: .PHONY
 %.png : %.diag
 	$(DITAA) -o -E $<
 
+distrib: all
+	cp ${PAPER}.pdf ${SOURCES} tfp9 
 .PHONY:

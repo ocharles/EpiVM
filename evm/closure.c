@@ -894,6 +894,7 @@ VAL DO_EVAL(VAL x, int update) {
     fun* fn;
     thunk* th;
     int excess;
+    spark* sp;
 
 //    dumpClosure(x);
 
@@ -906,6 +907,14 @@ VAL DO_EVAL(VAL x, int update) {
     case PTR:
     case UNIT:
 	return x; // Already evaluated
+    case RUNNING:
+	sp = (spark*)(x->info);
+	// Wait for it to run by trying to take the lock, then eval again,
+	// at which point it should have been updated.
+	// Q: Would this be better done with a condition variable?
+	pthread_mutex_lock(sp->lock);
+	pthread_mutex_unlock(sp->lock);
+	return DO_EVAL(x, update);
     case FUN:
 	// If the number of arguments is right, run it.
 	fn = (fun*)(x->info);

@@ -91,6 +91,9 @@ Do Lambda Lifting here too
 >    tc env (Lazy e) | appForm e = do
 >                e' <- tc env e
 >                return $ Lazy e'
+>    tc env (Par e) | appForm e = do
+>                e' <- tc env e
+>                return $ Par e'
 
 Make a new function, with current env as arguments, and add as a decl
 
@@ -102,6 +105,14 @@ Make a new function, with current env as arguments, and add as a decl
 >            let newd = Decl newname TyAny newfn Nothing []
 >            put (maxlen, nextn+1, newd:decls)
 >            return $ Lazy (App (R newname) (map V (map snd env)))
+>    tc env (Par e) = 
+>         do (maxlen, nextn, decls) <- get
+>            let newname = MN (getRoot nm) nextn
+>            let newargs = zip (map fst env) (repeat TyAny)
+>            let newfn = Bind newargs 0 e []
+>            let newd = Decl newname TyAny newfn Nothing []
+>            put (maxlen, nextn+1, newd:decls)
+>            return $ Par (App (R newname) (map V (map snd env)))
 
 >    tc env (Lam n ty e) = lift e [(n,ty)] where
 >        lift (Lam n ty e) args = lift e ((n,ty):args)

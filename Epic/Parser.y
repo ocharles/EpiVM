@@ -59,6 +59,7 @@ import Epic.Lexer
       unused          { TokenUnused }
       in              { TokenIn }
       lazy            { TokenLazy }
+      par             { TokenPar }
       strict          { TokenStrict }
       effect          { TokenEffect }
       foreign         { TokenForeign }
@@ -109,6 +110,7 @@ import Epic.Lexer
 
 %nonassoc NONE
 %nonassoc lazy
+%nonassoc par
 %left LET
 %left IF
 %left eq feq
@@ -183,6 +185,7 @@ Expr : name { R $1 }
      | Expr '(' ExprList ')' { App $1 $3 }
      | '[' ExprList ']' { Con 0 $2 }
      | lazy '(' Expr ')' { Lazy $3 }
+     | par '(' Expr ')' { Par $3 }
      | effect '(' Expr ')' { Effect $3 }
      | con int '(' ExprList ')' { Con $2 $4 }
      | Const { Const $1 }

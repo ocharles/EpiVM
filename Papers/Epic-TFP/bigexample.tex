@@ -129,7 +129,6 @@ program definition:
 
 type Proc = ([Id], Turtle)
 type Defs = [(Id,  Proc)]
-
 \end{SaveVerbatim}
 \useverb{atuinprog}
 
@@ -164,7 +163,7 @@ mkcol  c = con_ 3 @@ c
 
 \noindent
 Correspondingly, we can extract the concrete values safely from this
-structure, checking that the value is the required type, e.g.:
+structure, checking that the value is the required type, e.g.
 
 \begin{SaveVerbatim}{epicgetval}
 
@@ -178,7 +177,7 @@ getInt x  = case_ x [con 0 (\ (x :: Expr) -> x),
 Similarly, \texttt{getChar}, \texttt{getBool} and \texttt{getCol}
 check and extract values of the appropriate type.
 Using these, it is simple to define primitive arithmetic operations
-which check they are operating on the correct type, and report an
+which check that they are operating on the correct type, and report an
 error if not.
 
 \begin{SaveVerbatim}{primops}
@@ -208,7 +207,7 @@ void  drawLine(void* surf, int x, int y, int ex, int ey,
 
 \noindent
 The \texttt{startSDL} function opens a window with the given
-dimensions, and returns a pointer to a \emph{surface}, on which we can
+dimensions, and returns a pointer to a \emph{surface} on which we can
 draw; \texttt{drawLine} draws a line on a surface, between the given
 locations, and in the given colour, specified as red, green, blue and
 alpha channels.
@@ -263,12 +262,12 @@ forward st dist = case_ st
 \useverb{drawfwd}
 
 \noindent
-Note that there is a distinction between Epic code fragments, and Epic
-functions. We have used \texttt{getInt}, \texttt{esin} and
-\texttt{ecos} as inline Haskell functions, using Haskell application,
-but \texttt{drawLine} is applied as a separately defined Epic
+Here we have applied \texttt{getInt}, \texttt{esin} and
+\texttt{ecos} as Haskell functions, so they will be inlined in the resulting Epic code.
+In contrast, \texttt{drawLine} is applied as a separately defined Epic
 function, using Epic's application operator (\texttt{@@}).
 
+\vspace*{-1em}
 \subsubsection{Compiling Programs}
 
 Programs return an updated turtle state, and possibly perform 
@@ -312,14 +311,14 @@ class Compile a where
 In general, since we have set up all of the primitive operations as
 Epic functions, compiling an Atuin program consists of directly
 translating the abstract syntax to the Epic equivalent, making sure
-the state is maintained. For example, to compile a call, we
+the state is maintained. For example, to compile a call we
 build an Epic function call and add the current state as the first
 argument. Epic takes strings as identifiers, so we use \texttt{fullId
   :: Id -> String} to convert an Atuin identifier to an Epic identifier.
 
 \begin{SaveVerbatim}{compfn}
 
-compile state (Call i es) = app (fn fullId i) @@ state) es
+compile state (Call i es) = app (fn (fullId i) @@ state) es
    where app f [] = f
          app f (e:es) = app (f @@ compile state e) es
 
@@ -339,19 +338,19 @@ compile state (Seq x y)
 \useverb{compseq}
 
 Atuin has higher order procedures which accept code blocks as
-arguments. To compile a code block, we simply create a function which
+arguments. To compile a code block, we build a function which
 takes the turtle state (that is, the state at the time the block is
-executed, not the state at the time the block is created). Then when
-it is time to evaluate the block, we pass in the current state. Epic's
+executed, not the state at the time the block is created). 
+Epic's
 \texttt{effect\_} function ensures that a closure is evaluated, but
-the result is not updated as evaluating the closure may have side
+the result is not updated. Evaluating the closure may have side
 effects which may need to be executed again --- consider the
 \texttt{repeat} function above, for example, where the code block
 should be evaluated on each iteration.
 
 \begin{SaveVerbatim}{blockeval}
 
-compile state (Block t) = lazy_ (\st -> compile st t)
+compile state (Block t) = term (\st -> compile st t)
 compile state (Eval e)  = effect_ (compile state e @@ state)
 
 \end{SaveVerbatim}
@@ -361,7 +360,7 @@ compile state (Eval e)  = effect_ (compile state e @@ state)
 The rest of the operations are compiled by a direct mapping to the
 primitives defined earlier. Finally, the main program sets up an SDL
 surface, creates an initial turtle state, and passes that state to the
-user defined \texttt{main} function:
+user-defined \texttt{main} function:
 
 \begin{SaveVerbatim}{runmain}
 
@@ -379,6 +378,4 @@ runMain = let_ (fn "initSDL" @@ int 640 @@ int 480)
 
 \noindent
 The full source code for Atuin and its compiler is available from
-Hackage (\url{http://hackage.haskell.org/package/atuin}), which
-covers the remaining technical details of linking compiled programs
-with SDL.
+Hackage.

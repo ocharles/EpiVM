@@ -92,7 +92,9 @@ typedef enum {
     UNIT, 
     PTR,
     FREEVAR,
-    IND
+    IND,
+    RUNNING,
+    WAITING
 } ClosureType;
 
 typedef struct {
@@ -139,6 +141,12 @@ typedef struct {
     int tag;
     void** args;
 } con;
+
+typedef struct {
+    pthread_mutex_t *lock;
+    pthread_cond_t  *cond;
+    VAL thunk;
+} spark;
 
 typedef struct {
     VAL* roots;
