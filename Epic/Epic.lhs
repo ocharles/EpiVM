@@ -84,7 +84,7 @@ Allow Haskell functions to be used to build expressions.
 
 > instance EpicExpr e => EpicExpr ([Name], e) where
 >     term (ns, e) = do e' <- term e
->                       foldM (\e n -> return (Lam n TyAny e)) e' ns
+>                       foldM (\e n -> return (Lam n TyAny e)) e' (reverse ns)
 
 > -- | Build a function definition, with a name supply
 > class EpicFn e where
@@ -182,8 +182,9 @@ case alternatives
 >                    (Alt t vars e') <- mkAlt t (f (R arg))
 >                    return $ Alt t ((arg, TyAny):vars) e'
 
-> instance Alternative ([Name], Expr) where
->     mkAlt t (vars, e) = return $ Alt t (map (\x -> (x, TyAny)) vars) e
+> instance (Alternative e) => Alternative ([Name], e) where
+>     mkAlt t (vars, e) = do (Alt t rest e') <- mkAlt t e
+>                            return $ Alt t ((map (\x -> (x, TyAny)) vars) ++ rest) e'
 
 > -- | Case alternative for constructor with the given tag
 > con :: Alternative e => Int -- ^ the tag
