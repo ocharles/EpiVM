@@ -63,7 +63,7 @@ Raw data types. Int, Char, Bool are unboxed.
 > data Const = MkInt Int
 >            | MkBigInt Integer
 >            | MkChar Char
->            | MkFloat Float
+>            | MkFloat Double
 >            | MkBigFloat Double
 >            | MkString String
 >            | MkBool Bool

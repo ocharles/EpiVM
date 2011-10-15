@@ -32,7 +32,7 @@ at this stage.
 >             | UNUSED TmpVar
 >             | INT TmpVar Int
 >             | BIGINT TmpVar Integer
->             | FLOAT TmpVar Float
+>             | FLOAT TmpVar Double
 >             | BIGFLOAT TmpVar Double
 >             | STRING TmpVar StrVar
 >             | PROJ TmpVar TmpVar Int -- project into a register

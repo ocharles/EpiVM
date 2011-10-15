@@ -21,7 +21,7 @@ locally bound name V n is referred to by stack location (<loc>-n)
 >             | PUSH Loc
 >             | INT Int
 >             | BIGINT Integer
->             | FLOAT Float
+>             | FLOAT Double
 >             | STRING Int -- reference to string pool
 >             | CON Tag Int
 >             | UNIT

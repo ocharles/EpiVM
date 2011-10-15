@@ -368,7 +368,7 @@ Remaining expression constructs
 > int x = term $ Const (MkInt x)
 
 > -- | Constant float
-> float :: Float -> Term
+> float :: Double -> Term
 > float x = term $ Const (MkFloat x)
 
 > -- | Constant character
