@@ -60,6 +60,9 @@ Allow Haskell functions to be used to build expressions.
 > -- | A sub-term, with a name supply
 > type Term = State Int Expr
 
+> instance Show Term where
+>    show t = show (evalState t 0)
+
 > -- | Build expressions, with a name supply
 > class EpicExpr e where
 >     term :: e -> State Int Expr
