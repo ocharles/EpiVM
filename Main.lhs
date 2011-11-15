@@ -79,7 +79,7 @@
 >                               return (fns,opts)
 >                       else return (fns,opts)
 
-> showUsage = do putStrLn $ "Epigram Supercombinator Compiler version " ++ versionString
+> showUsage = do putStrLn $ "Epic version " ++ versionString
 >                putStrLn "Usage:\n\tepic <input file> [options]"
 >                exitWith (ExitFailure 1)
 

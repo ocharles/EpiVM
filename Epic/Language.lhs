@@ -22,6 +22,7 @@
 >                     | Checking Int -- ^ Checking level (0 none)
 >                     | ExternalMain -- ^ main is defined externally (in C)
 >                     | MainInc FilePath -- ^ File to #include in main program
+>                     | LinkObj FilePath -- ^ .o file to link with
 >   deriving Eq
 
 Raw data types. Int, Char, Bool are unboxed.

@@ -21,10 +21,11 @@
 >                  lazy_, effect_,
 >                  foreign_, foreignL_, foreignConst_, foreignConstL_,
 >                  let_, letN_, update_, op_,
->                  str, int, float, char, bool, unit_, (!.), fn, ref, (+>),
+>                  str, int, bigint, float, char, bool, unit_, 
+>                  (!.), fn, ref, (+>),
 >                  malloc_,
 >                  -- * Types
->                  Type, tyInt, tyChar, tyBool, tyFloat, tyString,
+>                  Type, tyInt, tyBigInt, tyChar, tyBool, tyFloat, tyString,
 >                  tyPtr, tyUnit, tyAny, tyC,
 >                  -- * Operators
 >                  Op, plus_, minus_, times_, divide_, 
@@ -370,6 +371,10 @@ Remaining expression constructs
 > int :: Int -> Term
 > int x = term $ Const (MkInt x)
 
+> -- | Constant big integer
+> bigint :: Integer -> Term
+> bigint x = term $ Const (MkBigInt x)
+
 > -- | Constant float
 > float :: Double -> Term
 > float x = term $ Const (MkFloat x)
@@ -391,10 +396,12 @@ Remaining expression constructs
 > (+>) :: (EpicExpr c) => c -> Term -> Term
 > (+>) c k = let_ c (\(x :: Expr) -> k)
 
-> tyInt, tyChar, tyBool, tyFloat, tyString, tyPtr, tyUnit, tyAny :: Type
+> tyInt, tyBigInt, tyChar, tyBool, tyFloat :: Type
+> tyString, tyPtr, tyUnit, tyAny :: Type
 > tyC :: String -> Type
 
 > tyInt    = TyInt
+> tyBigInt = TyBigInt
 > tyChar   = TyChar
 > tyBool   = TyBool
 > tyFloat  = TyFloat
