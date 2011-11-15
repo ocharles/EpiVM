@@ -365,6 +365,11 @@ mpz_t* strToBigInt(char* str)
     return answer;
 }
 
+mpz_t* intToBigInt(int x)
+{
+   return NEWBIGINTI(x);
+}
+
 char* bigIntToStr(mpz_t x)
 {
     char* str = mpz_get_str(NULL,10,x);
