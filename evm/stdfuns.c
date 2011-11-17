@@ -194,12 +194,12 @@ mpz_t* addBigInt(mpz_t x, mpz_t y) {
 
 VAL addBig(VAL x, VAL y) {
     if (ISINT(x) && ISINT(y)) {
-	int vx = GETINT(x);
-	int vy = GETINT(y);
+	intptr_t vx = GETINT(x);
+	intptr_t vy = GETINT(y);
 	if ((vx <= 0 && vy >=0) || (vx >=0 && vy <=0)) {
 	    return INTOP(+,x,y);
 	}
-	int res = vx + vy;
+	intptr_t res = vx + vy;
 	if (res >= 1<<30 || res <= -(1 << 30)) {
 	    return MKBIGINT(addBigInt(*(NEWBIGINTI(vx)), *(NEWBIGINTI(vy))));
 	} else {
@@ -218,12 +218,12 @@ mpz_t* subBigInt(mpz_t x, mpz_t y) {
 
 VAL subBig(VAL x, VAL y) {
     if (ISINT(x) && ISINT(y)) {
-	int vx = GETINT(x);
-	int vy = GETINT(y);
+	intptr_t vx = GETINT(x);
+	intptr_t vy = GETINT(y);
 	if ((vx <= 0 && vy <=0) || (vx >=0 && vy >=0)) {
 	    return INTOP(-,x,y);
 	}
-	int res = vx - vy;
+	intptr_t res = vx - vy;
 	if (res >= 1<<30 || res <= -(1 << 30)) {
 	    return MKBIGINT(subBigInt(*(NEWBIGINTI(vx)), *(NEWBIGINTI(vy))));
 	} else {

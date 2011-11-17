@@ -69,9 +69,9 @@ typedef intptr_t eint;
 #define MKCLOSURE (Closure*)EMALLOC(sizeof(Closure))
 #define MKUNIT (void*)0
 
-#define INTOP(op,x,y) MKINT((((eint)x)>>1) op (((eint)y)>>1))
+#define INTOP(op,x,y) MKINT((eint)((((eint)x)>>1) op (((eint)y)>>1)))
 #define FLOATOP(op,x,y) MKFLOAT(((GETFLOAT(x)) op (GETFLOAT(y))))
-#define FLOATBOP(op,x,y) MKINT(((GETFLOAT(x)) op (GETFLOAT(y))))
+#define FLOATBOP(op,x,y) MKINT((eint)(((GETFLOAT(x)) op (GETFLOAT(y)))))
 #define ADD(x,y) (void*)(((eint)x)+(((eint)y)-1))
 #define MULT(x,y) (MKINT((((eint)x)>>1) * (((eint)y)>>1)))
 #define CHECKEVALUATED(x) if(ISFUN(x) || ISTHUNK(x) \
@@ -280,7 +280,7 @@ extern VMState* vm;
 // vm->roots=rootbase;
 
 #define INTTOEINT(x) ((eint)(x))
-#define EINTTOINT(x) ((int)(x))
+#define EINTTOINT(x) ((intptr_t)(x))
 
 //void* MKINT(int x);
 mpz_t* NEWBIGINTI(int val);
@@ -299,7 +299,7 @@ mpz_t* GETBIGINT(void* x);
 double GETFLOAT(void* x);
 //void* GETPTR(void* x);
 
-void* MKFREE(int x);
+void* MKFREE(intptr_t x);
 
 // Exit with fatal error
 void ERROR(char* msg);

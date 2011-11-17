@@ -1110,7 +1110,7 @@ void ERROR(char* msg)
     exit(1);
 }
 
-void* MKFREE(int x)
+void* MKFREE(intptr_t x)
 {
     VAL c = MKCLOSURE;
     SETTY(c, FREEVAR);
