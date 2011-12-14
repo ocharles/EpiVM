@@ -269,6 +269,7 @@
 
 > cToEpic var TyString = "MKSTR((char*)(" ++ var ++ "))"
 > cToEpic var TyInt = "MKINT(INTTOEINT(" ++ var ++ "))"
+> cToEpic var TyChar = "MKINT(INTTOEINT(" ++ var ++ "))"
 > cToEpic var TyPtr = "MKPTR(" ++ var ++ ")"
 > -- cToEpic var TyBigInt = "MKBIGINT((mpz_t*)(" ++ var ++ "))" -- now just a VAL
 > cToEpic var TyFloat = "MKFLOAT(" ++ var ++ ")"
