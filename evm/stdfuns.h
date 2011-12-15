@@ -32,7 +32,8 @@ int strlt(char* x, char* y);
 
 void* fileOpen(char* name, char* mode);
 void fileClose(void* h);
-void* freadStr(void* h);
+char* freadStr(void* h);
+void* freadStrAny(void* h);
 void fputStr(void* h, char* str);
 
 int isNull(void* ptr);

@@ -52,7 +52,16 @@ char* readStr() {
 }
 
 // FIXME: Do this properly!
-void* freadStr(void* h) {
+char* freadStr(void* h) {
+    char *buf = NULL;
+    if (buf==NULL) { buf = EMALLOC(sizeof(char)*512); } // yeah, right...
+    fgets(buf,512,(FILE*)h);
+//    char *loc = strchr(buf,'\n');
+//    if (loc) *(loc+1) = '\0'; else buf[0]='\0';
+    return buf;
+}
+
+void* freadStrAny(void* h) {
     static char bufin[128];
     bufin[0]='\0';
 
