@@ -356,7 +356,8 @@ Compile an application of a function to arguments
 >           = do reg' <- new_tmp
 >                (argcode, argregs) <- ecomps lazy args vs
 >                fcode <- ecomp lazy Middle f reg' vs
->                return $ fcode ++ argcode ++ [ADDARGS reg reg' argregs]
+>                return $ fcode ++ argcode ++ [ADDARGS reg reg' argregs] ++
+>                           if (not (fst lazy)) then [EVAL reg (snd lazy)] else []
 
 >     ccomp (MkInt i) reg = return [INT reg i]
 >     ccomp (MkBigInt i) reg = return [BIGINT reg i]
