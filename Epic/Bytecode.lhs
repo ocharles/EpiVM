@@ -253,7 +253,7 @@ As above, but don't create a new local
 >     ecomp lazy tcall (ForeignCall ty fn argtypes) reg vs = do
 >           savetmp <- get_tmp
 >           let (args,types) = unzip argtypes
->           (argcode, argregs) <- ecompsEv lazy args vs
+>           (argcode, argregs) <- ecompsEv (fst lazy, False) args vs
 >           -- let evalcode = if (snd lazy) then [] else map (\x -> EVAL x (snd lazy)) argregs
 >           set_tmp savetmp
 >           return $ argcode ++ [FOREIGN ty reg fn (zip argregs types),
