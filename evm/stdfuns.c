@@ -374,9 +374,9 @@ mpz_t* strToBigInt(char* str)
     return answer;
 }
 
-mpz_t* intToBigInt(int x)
+void* intToBigInt(int x)
 {
-   return NEWBIGINTI(x);
+   return MKINT(x); 
 }
 
 char* bigIntToStr(mpz_t x)
