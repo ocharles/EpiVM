@@ -173,7 +173,7 @@ We're being very tolerant of input here...
 > v_ise ((n,ty):args) i = let rest = v_ise args (i+1) in
 >                             case lookup n rest of
 >                               Nothing -> (n,i):rest
->                               _ -> rest
+>                               Just i' -> (n,i'):rest
 
        where dropArg n [] = []
              dropArg n ((x,i):xs) | x == n = dropArg n xs

@@ -75,6 +75,7 @@
 > workers _ [] = ""
 > workers ctxt (decl@(Decl fname ret func@(Bind args locals defn _) _ _):xs) =
 >     -- trace (show fname ++ ": " ++ show defn) $
+>     "/*\n " ++ show func ++ "\n*/\n" ++
 >     "void* " ++ quickcall fname ++ "(" ++ showargs args 0 ++ ") {\n" ++
 >      compileBody (compile ctxt fname func) ++ "\n}\n\n" ++ exportC decl ++
 >     workers ctxt xs
