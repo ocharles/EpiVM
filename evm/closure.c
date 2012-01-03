@@ -724,7 +724,7 @@ inline VAL aux_CLOSURE_APPLY3(VAL f, VAL a1, VAL a2, VAL a3)
     }
 
     fn->fn = (void*)f;
-    fn->numargs = 2;
+    fn->numargs = 3;
     fn->args = MKARGS(3);
     fn->args[0] = a1;
     fn->args[1] = a2;
@@ -746,7 +746,7 @@ inline VAL aux_CLOSURE_APPLY4(VAL f, VAL a1, VAL a2, VAL a3, VAL a4)
     }
 
     fn->fn = (void*)f;
-    fn->numargs = 2;
+    fn->numargs = 4;
     fn->args = MKARGS(4);
     fn->args[0] = a1;
     fn->args[1] = a2;
@@ -769,7 +769,7 @@ inline VAL aux_CLOSURE_APPLY5(VAL f, VAL a1, VAL a2, VAL a3, VAL a4, VAL a5)
     }
 
     fn->fn = (void*)f;
-    fn->numargs = 2;
+    fn->numargs = 5;
     fn->args = MKARGS(5);
     fn->args[0] = a1;
     fn->args[1] = a2;
@@ -1084,7 +1084,14 @@ void* MKSTR(const char* x)
 
 // Since MKSTR is used to build strings from foreign calls, the string
 // itself will already have been allocated so we just want the closure.
-    c->info=(void*)x;
+
+// If the foreign call has returned NULL, though, make an empty string.
+
+    if (x == NULL) {
+        return MKSTR("");
+    } else {
+        c->info=(void*)x;
+    }
     EREADY(c);
     return c;
 }

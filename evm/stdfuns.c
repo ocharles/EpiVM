@@ -98,7 +98,11 @@ int strlt(char* x, char* y) {
 
 int strToInt(char* str)
 {
-    return strtol(str,NULL,10);
+    char* end;
+    if (str == NULL) return 0;
+    int v = strtol(str,&end,10);
+
+    if (*end != '\0') return 0; else return v;
 }
 
 char* intToStr(int x)
