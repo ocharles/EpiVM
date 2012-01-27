@@ -15,7 +15,7 @@ intToStr (x:Int) -> String =
     foreign String "intToStr" (x:Int)
 
 strToInt (x:String) -> Int =
-    foreign String "strToInt" (x:String)
+    foreign Int "strToInt" (x:String)
 
 printInt (x:Int) -> Unit =
     foreign Unit "printInt" (x:Int)
