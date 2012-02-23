@@ -65,6 +65,7 @@ double intToFloat(int x);
 int floatToInt(double x);
 
 void* intToBigInt(int x);
+int bigIntToInt(void* big);
 
 mpz_t* strToBigInt(char* str);
 char* bigIntToStr(mpz_t x);

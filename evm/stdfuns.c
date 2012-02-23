@@ -383,6 +383,16 @@ void* intToBigInt(int x)
    return MKINT(INTTOEINT(x)); 
 }
 
+int bigIntToInt(void* big)
+{
+    // if it's overflowed, return 0
+    if (ISINT(big)) {
+        return GETINT(big);
+    } else {
+        return mpz_get_ui(*((mpz_t*)(GETBIGINT(big))));
+    }
+}
+
 char* bigIntToStr(mpz_t x)
 {
     char* str = mpz_get_str(NULL,10,x);
