@@ -1,5 +1,5 @@
 CC = gcc
-#CFLAGS = -Wall -g
+#CFLAGS = -Wall -g -DUSE_BOEHM
 CFLAGS = -Wall -O3 -DUSE_BOEHM
 OBJS = closure.o stdfuns.o emalloc.o sparks.o
 INSTALLDIR = ${PREFIX}/lib/evm

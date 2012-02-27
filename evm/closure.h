@@ -25,6 +25,7 @@ extern ALLOCATOR allocate;
 extern REALLOCATOR reallocate;
 extern pool_t** pools;
 extern pool_t* pool;
+extern int trace_size;
 
 #define EMALLOC(x) pool->allocate(x)
 #define EREADY(x) 
@@ -37,6 +38,16 @@ extern pool_t* pool;
     pool=malloc(sizeof(pool_t)); pools++; *pools = pool;		\
     pool->allocate=pool_malloc;						\
     pool->reallocate=pool_realloc;					\
+    pool->block = malloc(GETINT(x));					\
+    pool->block_loc = pool->block;					\
+    pool->block_end = pool->block+GETINT(x);				\
+    pool->grow = NULL;
+// Add a new memory pool to the pool stack, using the tracing
+// allocator
+#define NEWTRACEPOOL(x) \
+    pool=malloc(sizeof(pool_t)); pools++; *pools = pool;		\
+    pool->allocate=trace_malloc;						\
+    pool->reallocate=trace_realloc;					\
     pool->block = malloc(GETINT(x));					\
     pool->block_loc = pool->block;					\
     pool->block_end = pool->block+GETINT(x);				\
@@ -182,6 +193,8 @@ void* pool_malloc(size_t size);
 void* pool_realloc(void* ptr, size_t size);
 void* pool_grow_malloc(size_t size);
 void* pool_grow_realloc(void* ptr, size_t size);
+void* trace_malloc(size_t size);
+void* trace_realloc(void* ptr, size_t size);
 // Copy value from the given pool into the currently active region
 VAL copy(VAL x, pool_t* pool);
 // Promote a value on the stack to the heap

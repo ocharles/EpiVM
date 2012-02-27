@@ -37,6 +37,11 @@ Brings everything together; parsing, checking, code generation
 > addGCC ((GCCOpt s):xs) = s ++ " " ++ addGCC xs
 > addGCC (_:xs) = addGCC xs
 
+> linkobjs :: [CompileOptions] -> String
+> linkobjs [] = ""
+> linkobjs ((LinkObj s):xs) = s ++ " " ++ linkobjs xs
+> linkobjs (_:xs) = linkobjs xs
+
 > outputHeader :: [CompileOptions] -> Maybe FilePath
 > outputHeader [] = Nothing
 > outputHeader ((MakeHeader f):_) = Just f
@@ -86,7 +91,7 @@ Chop off everything after the last / - get the directory a file is in
 >          fp <- getDataFileName "evm/closure.h"
 >          let libdir = trimLast fp
 >          let dbg = if (elem Debug opts) then "-g" else "-O3"
->          let cmd = "gcc -DUSE_BOEHM -c " ++ dbg ++ " -foptimize-sibling-calls -x c " ++ tmpn ++ " -I" ++ libdir ++ " -o " ++ outf ++ " " ++ addGCC opts ++ doTrace opts
+>          let cmd = "gcc -DUSE_BOEHM -c -fPIC " ++ dbg ++ " -foptimize-sibling-calls -x c " ++ tmpn ++ " -I" ++ libdir ++ " -o " ++ outf ++ " " ++ addGCC opts ++ doTrace opts
 >          -- putStrLn $ cmd
 >          -- putStrLn $ fp
 >          exit <- system cmd
@@ -138,6 +143,7 @@ Chop off everything after the last / - get the directory a file is in
 >     let cmd = "gcc -DUSE_BOEHM -x c " ++ dbg ++ " -foptimize-sibling-calls " ++ mainprog ++ " -x none -L" ++
 >               libdir++" -I"++libdir ++ " " ++
 >               (concat (map (++" ") infs)) ++ 
+>               (" " ++ linkobjs opts) ++
 >               " -levm -lgc -lpthread -lgmp -o "++outf ++ " " ++ addGCC opts
 >     -- putStrLn $ cmd
 >     exit <- system cmd

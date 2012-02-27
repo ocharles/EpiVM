@@ -162,7 +162,7 @@ Get the arity of a definition in the context
 >    compare (DefaultCase _) (Alt _ _ _) = GT
 >    compare _ _ = EQ
 
-> data Allocator = FixedPool | GrowablePool
+> data Allocator = FixedPool | GrowablePool | TracePool
 >   deriving Eq
 
 > data Op = Plus | Minus | Times | Divide | Modulo
@@ -211,6 +211,7 @@ Get the arity of a definition in the context
 
 > instance Show Allocator where
 >     show FixedPool = "%fixed"
+>     show TracePool = "%trace"
 >     show GrowablePool = "%growable"
                              
 Supercombinator definitions

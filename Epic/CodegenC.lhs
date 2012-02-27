@@ -157,6 +157,7 @@
 >                          "CLEARPOOL(" ++ tmp r ++ ");\n"
 >       where pool FixedPool = "NEWFIXEDPOOL"
 >             pool GrowablePool = "NEWGROWABLEPOOL"
+>             pool TracePool = "NEWTRACEPOOL"
 >    cg (WHILE t b) = do tcode <- cgs t
 >                        bcode <- cgs b
 >                        return $ "while (1) { " ++ tcode ++ "\n" ++ bcode ++ "}"

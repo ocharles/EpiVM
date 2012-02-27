@@ -19,6 +19,7 @@ void epicMemInfo();
 
 ALLOCATOR allocate;
 REALLOCATOR reallocate;
+int trace_size;
 pool_t** pools = NULL;
 pool_t* pool = NULL;
 
@@ -111,6 +112,24 @@ void assertIntR(Closure* c)
     if (!ISINT(c)) { dumpClosure(c); assert(0); }
 }
 
+void* trace_malloc(size_t size) {
+    int tsize = size;
+    if ((size & 7)!=0) {
+	tsize = 8 + ((size >> 3) << 3);
+    }
+    trace_size += 2*sizeof(size_t) + tsize;
+    return GC_malloc(size);
+}
+
+void* trace_realloc(void* ptr, size_t size) {
+    int tsize = size;
+    if ((size & 7)!=0) {
+	tsize = 8 + ((size >> 3) << 3);
+    }
+    trace_size += 2*sizeof(size_t) + tsize;
+    return GC_realloc(ptr, size);
+}
+
 void* pool_malloc(size_t size) {
     if ((size & 7)!=0) {
 	size = 8 + ((size >> 3) << 3);
@@ -118,11 +137,18 @@ void* pool_malloc(size_t size) {
     *((size_t*)(pool->block_loc)) = size;
     void* mem = (void*)(((size_t*)(pool->block_loc))+2);
     pool->block_loc = pool->block_loc+size+sizeof(size_t)*2;
-
-    return mem;
+    if (pool->block_loc > pool->block_end) {
+        return NULL;
+    }
+    else {
+        return mem;
+    }
 }
 
 void* pool_realloc(void* ptr, size_t size) {
+    if (ptr == NULL) { 
+        return pool_malloc(size);
+    }
     if ((size & 7)!=0) {
 	size = 8 + ((size >> 3) << 3);
     }
@@ -249,6 +275,10 @@ VAL copyCon(con* c, pool_t* oldpool) {
 VAL copy(VAL x, pool_t* oldpool) {
     // only copy things that were allocated in the given pool.
     // TODO: also need to check whether it was allocated in pool->grow
+    if (trace_size > 0) {
+        fprintf(stderr, "Allocated %d bytes\n", trace_size); 
+        trace_size = 0;
+    }
 
     if (x>=(VAL)(oldpool->block) && x<(VAL)(oldpool->block_end)) {
 	switch(GETTY(x)) {
@@ -1149,6 +1179,7 @@ VMState* init_evm(int argc, char* argv[])
 {
     allocate = GC_malloc;
     reallocate = GC_realloc;
+    trace_size = 0;
 
     pools = malloc(sizeof(pool_t*)*1024);
     pool = malloc(sizeof(pool_t));

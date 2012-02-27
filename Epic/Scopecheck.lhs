@@ -137,6 +137,10 @@ Make a new function, with current env as arguments, and add as a decl
 >                l' <- tc env l
 >                r' <- tc env r
 >                return $ Op op l' r'
+>    tc env (WithMem alloc s e) = do
+>                s' <- tc env s
+>                e' <- tc env e
+>                return $ WithMem alloc s' e'
 >    tc env (ForeignCall ty fn args) = do
 >                argexps' <- mapM (tc env) (map fst args)
 >                return $ ForeignCall ty fn (zip argexps' (map snd args))

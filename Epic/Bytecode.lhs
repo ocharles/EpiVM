@@ -265,6 +265,7 @@ As above, but don't create a new local
 >           set_tmp savetmp
 >           return $ argcode ++ [FOREIGN ty reg fn (zip argregs types),
 >                                ADDTMPROOT reg]
+>     ecomp lazy tcall code _ _ = error $ "Not implemented " ++ show code
 
 >     ecomps :: (Bool, Bool) -> [Expr] -> Int -> State CompileState (Bytecode, [TmpVar])
 >     ecomps lazy e vs = ecomps' lazy [] [] e vs

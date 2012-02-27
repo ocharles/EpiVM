@@ -23,7 +23,7 @@
 >                  let_, letN_, update_, op_,
 >                  str, int, bigint, float, char, bool, unit_, 
 >                  (!.), fn, ref, (+>),
->                  malloc_,
+>                  malloc_, mallocTrace_,
 >                  -- * Types
 >                  Type, tyInt, tyBigInt, tyChar, tyBool, tyFloat, tyString,
 >                  tyPtr, tyUnit, tyAny, tyC,
@@ -286,6 +286,13 @@ Remaining expression constructs
 >            -> Term
 > malloc_ = exp2 (WithMem FixedPool)
 
+> -- | Evaluate an expression under garbage collected memory, and output
+> -- how much was allocated during evaluation.
+> mallocTrace_ :: (EpicExpr a) => 
+>               a -- ^ Expression to evaluate
+>            -> Term
+> mallocTrace_ x = exp2 (WithMem TracePool) (int 0) x
+
  mkCon :: Int -> [Term] -> Term
  mkCon tag args = do args' <- mapM expr args
                      return (Con tag args')
@@ -441,6 +448,7 @@ Remaining expression constructs
 
 > -- | Top level declarations
 > data EpicDecl = forall e. EpicFn e => EpicFn Name e -- ^ Normal function
+>               | EpicExt Name Int  -- ^ Epic function defined in a separate .o
 >               | Include String -- ^ Include a C header
 >               | Link String    -- ^ Link to a C library
 >               | CType String   -- ^ Export a C type
@@ -459,7 +467,8 @@ Remaining expression constructs
 
 > mkDecl :: EpicDecl -> Decl
 > mkDecl (EpicFn n e) = Decl n TyAny (mkFunc e) Nothing []
-> -- mkDecl (n, Epic.Epic.Extern nm ty tys) = Epic.Language.Extern nm ty tys
+> mkDecl (EpicExt nm arity) 
+>     = Epic.Language.Extern nm TyAny (take arity (repeat TyAny))
 > mkDecl (Epic.Epic.Include f) = Epic.Language.Include f
 > mkDecl (Epic.Epic.Link f) = Epic.Language.Link f
 > mkDecl (Epic.Epic.CType f) = Epic.Language.CType f
