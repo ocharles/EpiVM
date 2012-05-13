@@ -448,6 +448,8 @@ Remaining expression constructs
 
 > -- | Top level declarations
 > data EpicDecl = forall e. EpicFn e => EpicFn Name e -- ^ Normal function
+>               | forall e. EpicFn e => EpicExportFn Name Type [Type] String e 
+>                                          -- ^ exported to C
 >               | EpicExt Name Int  -- ^ Epic function defined in a separate .o
 >               | Include String -- ^ Include a C header
 >               | Link String    -- ^ Link to a C library
@@ -467,6 +469,10 @@ Remaining expression constructs
 
 > mkDecl :: EpicDecl -> Decl
 > mkDecl (EpicFn n e) = Decl n TyAny (mkFunc e) Nothing []
+> mkDecl (EpicExportFn n rty tys cname e)
+>                     = Decl n rty (updateArgTys (mkFunc e)) (Just cname) []
+>   where updateArgTys (Bind args l d f) 
+>             = Bind (zip (map fst args) tys) l d f
 > mkDecl (EpicExt nm arity) 
 >     = Epic.Language.Extern nm TyAny (take arity (repeat TyAny))
 > mkDecl (Epic.Epic.Include f) = Epic.Language.Include f
