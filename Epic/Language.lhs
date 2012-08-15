@@ -1,9 +1,14 @@
-> {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses,
+> {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses,CPP
 > FunctionalDependencies #-}
 
 > module Epic.Language where
 
 > import Control.Monad
+#if MIN_VERSION_base(4,6,0)
+> import Control.Exception (catch)	
+#endif
+
+
 > import System.IO
 > import System.Directory
 > import System.Environment
