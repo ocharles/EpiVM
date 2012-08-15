@@ -384,7 +384,14 @@ Temp files for compiler output
 > environment :: String -> IO (Maybe String)
 > environment x = catch (do e <- getEnv x
 >                           return (Just e))
->                       (\y-> do return (y::SomeException);  return Nothing)
+#if MIN_VERSION_base(4,6,0)
+>                           (\y-> do return (y::SomeException);  return Nothing)  
+#endif
+> 
+#if !MIN_VERSION_base(4,6,0)
+>                           (\_->  return Nothing)  
+#endif  
+
 
 Some tests
 
