@@ -1,4 +1,4 @@
-> {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses,CPP
+> {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses,CPP,
 > FunctionalDependencies #-}
 
 > module Epic.Language where
