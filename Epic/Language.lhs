@@ -5,7 +5,7 @@
 
 > import Control.Monad
 #if MIN_VERSION_base(4,6,0)
-> import Control.Exception (catch)	
+> import Control.Exception.Base
 #endif
 
 
@@ -384,7 +384,7 @@ Temp files for compiler output
 > environment :: String -> IO (Maybe String)
 > environment x = catch (do e <- getEnv x
 >                           return (Just e))
->                       (\_ -> return Nothing)
+>                       (\y-> do return (y::SomeException);  return Nothing)
 
 Some tests
 
