@@ -25,6 +25,10 @@ void epicMemInfo();
 // Force garbage collection
 void epicGC();
 
+FILE* get_stdin();
+FILE* get_stdout();
+FILE* get_stderr();
+
 int readInt();
 char* readStr();
 int streq(char* x, char* y);

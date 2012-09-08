@@ -41,6 +41,18 @@ int readInt() {
     return atoi(readStr());
 }
 
+FILE* get_stdin() {
+    return stdin; 
+}
+
+FILE* get_stdout() {
+    return stdout; 
+}
+
+FILE* get_stderr() {
+    return stderr; 
+}
+
 // FIXME: Do this properly!
 char* readStr() {
     char *buf = NULL;
@@ -102,7 +114,7 @@ int strToInt(char* str)
     if (str == NULL) return 0;
     int v = strtol(str,&end,10);
 
-    if (*end != '\0') return 0; else return v;
+    if (*end != '\0' && *end != '\n' && *end != '\r') return 0; else return v;
 }
 
 char* intToStr(int x)
