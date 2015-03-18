@@ -1,2 +1,4 @@
 dist/
 evm/
+tests/output
+output
