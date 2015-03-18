@@ -1,4 +1,10 @@
-> {-# OPTIONS_GHC -XFlexibleInstances #-}
+> {-# LANGUAGE CPP #-}
+
+#if __GLASGOW_HASKELL__ >= 710
+> {-# LANGUAGE FlexibleContexts #-}
+#endif
+
+> {-# LANGUAGE FlexibleInstances #-}
 
 > module Epic.Scopecheck where
 
