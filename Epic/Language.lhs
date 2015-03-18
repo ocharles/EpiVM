@@ -1,8 +1,16 @@
-> {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses,CPP,
-> FunctionalDependencies #-}
+> {-# LANGUAGE CPP #-}
+
+#if __GLASGOW_HASKELL__ >= 710
+> {-# LANGUAGE FlexibleContexts #-}
+#endif
+
+> {-# LANGUAGE FlexibleInstances      #-}
+> {-# LANGUAGE FunctionalDependencies #-}
+> {-# LANGUAGE MultiParamTypeClasses  #-}
 
 > module Epic.Language where
 
+> import Control.Applicative hiding ( Const )
 > import Control.Monad
 #if MIN_VERSION_base(4,6,0)
 > import Control.Exception.Base
@@ -342,12 +350,25 @@ Programs
 >               | Failure String String Int
 >     deriving (Show, Eq)
 > 
+
+> instance Functor Result where
+>   fmap = liftM
+
+> instance Applicative Result where
+>   pure  = return
+>   (<*>) = ap
+
 > instance Monad Result where
 >     (Success r)   >>= k = k r
 >     (Failure err fn line) >>= k = Failure err fn line
 >     return              = Success
 >     fail s              = Failure s "(no file)" 0
 > 
+
+> instance Alternative Result where
+>   (<|>) = mplus
+>   empty = mzero
+
 > instance MonadPlus Result where
 >     mzero = Failure "Error" "(no file)" 0
 >     mplus (Success x) _ = (Success x)
